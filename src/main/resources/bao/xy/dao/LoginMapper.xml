@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.dao.LoginMapper">
+
+    <select id="login" resultMap="staffResultMap">
+        SELECT * FROM staff where ( user_name=#{uname} )
+    </select>
+
+    <resultMap id="staffResultMap" type="bao.xy.model.Staff">
+        <result column="user_name" property="uname"></result>
+        <result column="password" property="pwd"></result>
+    </resultMap>
+</mapper>

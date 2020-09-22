@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>资产列表</title>
+
+    <link href="./plug-ins/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/assets.css" rel="stylesheet">
+    <style>
+        .lh>tbody>tr>td {
+            line-height: 33px;
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+    </style>
+</head>
+<body>
+<div id="box">
+    <div class="panel panel-default">
+        <div class="form-inline">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-addon">资产类别</div>
+                    <input type="text" class="form-control" placeholder="请输入资产类别" v-model="sd.assetClass">
+                    <div class="input-group-addon">资产状态</div>
+                    <input type="text" class="form-control" placeholder="请输入资产状态" v-model="sd.state">
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" @click="getData(1)">
+                <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                搜索
+            </button>
+        </div>
+        <div class="panel-heading">资产数据操作界面</div>
+        <div class="panel-body">
+            <button type="button" class="btn btn-default" @click="addMod">
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                添加
+            </button>
+        </div>
+    </div>
+    <div id="show">
+        <table class="table table-hover table-bordered lh" >
+            <tr>
+                <th>
+                    <input type="checkbox" v-model="allId" @change="all()"> 全选
+                </th>
+                <th>编号</th>
+                <th>分类</th>
+                <th>财务编号</th>
+                <th>产品编号</th>
+                <th>保管人编号</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            <tr v-for="li in list">
+                <td>
+                    <input type="checkbox" :value="li.id" v-model="ids" v-if="li.id != 1">
+                </td>
+                <td>{{li.id}}</td>
+                <td>{{li.assetClass}}</td>
+                <td>{{li.financeId}}</td>
+                <td>{{li.productId}}</td>
+                <td>{{li.careStaffId}}</td>
+                <td>{{li.state}}</td>
+                <td>
+                    <div class="btn-group  btn-group-xs" role="group">
+                        <button type="button" class="btn btn-danger" @click="del(li.id)">
+                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                            删除
+                        </button>
+                        <button type="button" class="btn btn-warning" @click="updt(li)">
+                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                            修改
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div class="myNav">
+            <nav aria-label="Page navigation" class="text-right">
+                <ul class="pagination">
+                    <li>
+                        <a @click="upPage()" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li v-for="page in pageList">
+                        <a @click="getData(page)">{{page}}</a>
+                    </li>
+                    <li>
+                        <a @click="nextPage()" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <!-- 添加资产模态框 -->
+    <div class="modal" id="addasset" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">添加资产信息</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal" @submit.prevent="submit()" id="addform">
+                        <div class="form-group">
+                            <label for="aclass" class="col-sm-3 control-label">资产类别:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="assetClass" id="aclass">
+                                    <option value="">未选择</option>
+                                    <option :value="aclass" v-for="aclass in allclass">{{aclass}}</option>
+                                </select>
+                                <div id="inputaclass"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="fId" class="col-sm-3 control-label">财务编号:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="financialId" @blur="findfid('ffid')" id="fId" placeholder="请输入财务编号">
+                                <div class="inputfid"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="pid" class="col-sm-3 control-label">产品编号:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="productId" @blur="findpid('fpid')" id="pid" placeholder="请输入产品编号">
+                                <div class="inputpid"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="state" class="col-sm-3 control-label">状态:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="states" id="state">
+                                    <option value="">未选择</option>
+                                    <option :value="state" v-for="state in allstate">{{state}}</option>
+                                </select>
+                                <div id="inputastate"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
+                            <button type="submit" class="btn btn-primary">保存</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 更改资产模态框 -->
+    <div class="modal" id="updtasset" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">更改资产信息</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal" @submit.prevent="submit1('updt')" >
+                        <div class="form-group">
+                            <label for="upaclass" class="col-sm-3 control-label">资产类别:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="upassetClass" id="upaclass">
+                                    <option value="">未选择</option>
+                                    <option :value="aclass" v-for="aclass in allclass">{{aclass}}</option>
+                                </select>
+                                <div id="inputupaclass"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="upfId" class="col-sm-3 control-label">财务编号:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="financialId" @blur="findfid('ffid')" id="upfId" placeholder="请输入财务编号">
+                                <div class="inputfid"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="uppid" class="col-sm-3 control-label">产品编号:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="productId" @blur="findpid('fpid')" id="uppid" placeholder="请输入产品编号">
+                                <div class="inputpid"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="upastate" class="col-sm-3 control-label">状态:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="upstates" id="upastate">
+                                    <option value="">未选择</option>
+                                    <option :value="state" v-for="state in allstate">{{state}}</option>
+                                </select>
+                                <div id="inputupastate"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
+                            <button type="submit" class="btn btn-primary">保存</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="./plug-ins/jq/jquery.min.js"></script>
+<script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+<script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+<script src="./js/assets.js"></script>
+</body>
+</html>

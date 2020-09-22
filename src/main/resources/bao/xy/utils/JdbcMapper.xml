@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.utils.JdbcMapper">
+
+    <insert id="add" keyProperty="staff.id" useGeneratedKeys="true">
+        INSERT INTO account (work, name, user_name, password, powers, sex, age, phone)
+        VALUES (#{staff.work}, #{staff.name}, #{staff.uname}, #{staff.pwd}, #{staff.powers}, #{staff.sex}, #{staff.age}, #{staff.phone})
+    </insert>
+
+    <delete id="del">
+        DELETE FROM staff WHERE id in (
+             <trim suffixOverrides="," prefixOverrides="">
+                <foreach collection="ids" item="id" separator=",">
+                    #{id}
+                </foreach>
+            </trim>
+        )
+    </delete>
+
+    <select id="select" resultMap="staffResultMap">
+        SELECT * FROM (#{table}) <include refid="whereSql"></include>
+    </select>
+
+    <resultMap id="staffResultMap" type="bao.xy.model.Staff">
+        <result column="user_name" property="uname"></result>
+        <result column="password" property="pwd"></result>
+    </resultMap>
+
+    <sql id="whereSql">
+        <where>
+            <if test="k != null and k != '' and v != null and v != ''">
+                AND (#{k}) = (#{v})
+            </if>
+            <if test="k1 != null and k1 != '' and v1 != null and v1 != ''">
+                AND (#{k1}) = (#{v1})
+            </if>
+        </where>
+    </sql>
+
+
+</mapper>

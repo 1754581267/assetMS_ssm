@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.dao.StaffMapper">
+
+    <insert id="add" keyProperty="staff.id" useGeneratedKeys="true">
+        INSERT INTO staff (work, name, user_name, password, powers, sex, age, phone)
+        VALUES (#{staff.work}, #{staff.name}, #{staff.uname}, #{staff.pwd}, #{staff.powers}, #{staff.sex}, #{staff.age}, #{staff.phone})
+    </insert>
+
+    <delete id="del">
+        DELETE FROM staff WHERE id in (
+             <trim suffixOverrides="," prefixOverrides="">
+                <foreach collection="ids" item="id" separator=",">
+                    #{id}
+                </foreach>
+            </trim>
+        )
+    </delete>
+
+    <update id="updp">
+        update staff set powers=#{powers} where ( id = #{id} )
+    </update>
+
+    <update id="updt">
+        update staff
+        set work=#{staff.work}, name=#{staff.name}, user_name=#{staff.uname}, password=#{staff.pwd}, powers=#{staff.powers}, sex=#{staff.sex}, age=#{staff.age}, phone=#{staff.phone}
+        where ( id = #{staff.id} )
+    </update>
+
+    <select id="paging" resultMap="staffResultMap">
+        SELECT * FROM staff t1 <include refid="whereSql"></include>
+    </select>
+
+    <select id="listCount" resultType="java.lang.Integer">
+        SELECT count(*) FROM staff t1 <include refid="whereSql"></include>
+    </select>
+
+    <resultMap id="staffResultMap" type="bao.xy.model.Staff">
+        <result column="user_name" property="uname"></result>
+        <result column="password" property="pwd"></result>
+    </resultMap>
+
+    <sql id="whereSql">
+        <where>
+            <if test="work != null and work != ''">
+                AND t1.work LIKE CONCAT('%', #{work}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                AND t1.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="uname != null and uname != ''">
+                AND t1.user_name LIKE CONCAT('%', #{uname}, '%')
+            </if>
+        </where>
+    </sql>
+
+
+</mapper>
