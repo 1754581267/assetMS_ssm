@@ -12,8 +12,11 @@ import java.util.List;
  */
 public interface AssetsMapper {
 
-    List<Asset> paging(RowBounds rb, @Param("assetsClass") String assetsClass, @Param("state") String state);
+    List<Asset> paging(RowBounds rb, @Param("assetClass") String assetClass, @Param("state") String state);
 
-    Integer listCount(@Param("assetsClass") String assetsClass, @Param("state") String state);
+    Integer listCount(@Param("assetClass") String assetClass, @Param("state") String state);
 
+    Integer add(@Param("asset") Asset asset);
+
+    Integer updt(@Param("asset") Asset asset);
 }

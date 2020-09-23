@@ -27,7 +27,7 @@ public interface AssetService {
      * @param ffid 财务id
      * @return code
      */
-    String ffid(String ffid);
+    String ffid(String ffid, String id);
 
 
     /**
@@ -36,5 +36,21 @@ public interface AssetService {
      * @param fpid
      * @return
      */
-    String fpid(String fpid);
+    String fpid(String fpid, String id);
+
+    /**
+     * 添加资产信息
+     *
+     * @param asset
+     * @return
+     */
+    String add(Asset asset);
+
+    /**
+     * 更改信息
+     *
+     * @param asset
+     * @return
+     */
+    String updt(Asset asset);
 }

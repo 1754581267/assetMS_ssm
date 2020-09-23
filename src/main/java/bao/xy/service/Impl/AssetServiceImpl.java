@@ -51,8 +51,7 @@ public class AssetServiceImpl implements AssetService {
 
         List<Asset> list = mapper.paging(PageUtils.getRowBounds(index, size), assetClass, state);
         td.setDataList(list);
-
-        return null;
+        return td;
     }
 
     /**
@@ -61,11 +60,15 @@ public class AssetServiceImpl implements AssetService {
      * @param ffid 财务id
      * @return code
      */
-    public String ffid(String ffid) {
+    public String ffid(String ffid, String id) {
         Integer sel = jdbcService.sel("finance", "id", ffid);
+        int i = 1;
+        if (!"".equals(id)) {
+            i = 2;
+        }
         if (sel >= 1) {
             Integer sel1 = jdbcService.sel("assets", "finance_id", ffid);
-            if (sel1 >= 1) {
+            if (sel1 >= i) {
                 code = "fidUsed";
             } else {
                 code = "findfid";
@@ -82,11 +85,15 @@ public class AssetServiceImpl implements AssetService {
      * @param fpid
      * @return
      */
-    public String fpid(String fpid) {
+    public String fpid(String fpid, String id) {
         Integer sel = jdbcService.sel("product", "id", fpid);
+        int i = 1;
+        if (!"".equals(id)) {
+            i = 2;
+        }
         if (sel >= 1) {
             Integer sel1 = jdbcService.sel("assets", "product_id", fpid);
-            if (sel1 >= 1) {
+            if (sel1 >= i) {
                 code = "pidUsed";
             } else {
                 code = "findpid";
@@ -100,5 +107,36 @@ public class AssetServiceImpl implements AssetService {
     public String del(List<Integer> idList) {
         code = jdbcService.delIds("assets", idList);
         return code;
+    }
+
+    /**
+     * 添加资产信息
+     *
+     * @param asset
+     * @return
+     */
+    public String add(Asset asset) {
+        Integer add = mapper.add(asset);
+        if (add > 0) {
+            return "addSuc";
+        } else {
+            return "addErr";
+        }
+    }
+
+    /**
+     * 更改信息
+     *
+     * @param asset
+     * @return
+     */
+    public String updt(Asset asset) {
+        System.out.println(asset.toString());
+        Integer updt = mapper.updt(asset);
+        if (updt > 0) {
+            return "updtSuc";
+        } else {
+            return "updtErr";
+        }
     }
 }

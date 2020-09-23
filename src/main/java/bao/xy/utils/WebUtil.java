@@ -45,6 +45,7 @@ public class WebUtil {
      */
     public static void jump(HttpServletResponse response, String href, String str, int scend) throws IOException {
         PrintWriter writer = response.getWriter();
+        response.setContentType("text/html;charset=UTF-8");
         writer.write("<a href=\"" + href + "\" style=\"display: block; font-size : 150%; text-align: center\">" + str + "</a>");
         response.setHeader("refresh",  scend + ";"+ href );
         writer.flush();

@@ -62,7 +62,7 @@ var app = new Vue({
             	this.getData(this.page.index);
             }
         },
-		runpage : function(max) {
+		runPage : function(max) {
 			this.page.max = max;
 			app.page.pager = [];
 			for (var i = 1; i <= max; i++) {
@@ -113,7 +113,7 @@ var app = new Vue({
 							console.log(code.code);
 							if (code.code == "delSuc") {
 								alert("删除成功");
-								location.reload();
+								app.getData(app.page.index);
 							} else if (code.code == "delErr") {
 								alert("删除失败");
 							}
@@ -150,7 +150,7 @@ var app = new Vue({
 				}
 			});
 		},
-		findfid : function (str) {
+		findfid : function () {
 			if (this.financialId == '') {
 				$(".inputfid").html("<strong style=\"color: red\">请输入财务编号</strong>");
 				this.a3 = 0;
@@ -159,7 +159,8 @@ var app = new Vue({
 					url : "/assets.ajax",
 					type : "POST",
 					data : {
-						str: str,
+						str: 'ffid',
+						id : this.upid,
 						ffid : this.financialId
 					},
 					dataType : "JSON",
@@ -183,7 +184,7 @@ var app = new Vue({
 				});
 			}
 		},
-		findpid : function (str) {
+		findpid : function () {
 			if (this.productId == '') {
 				$(".inputpid").html("<strong style=\"color: red\">请输入产品编号</strong>");
 				this.a4 = 0;
@@ -192,7 +193,8 @@ var app = new Vue({
 					url : "/assets.ajax",
 					type : "POST",
 					data : {
-						str: str,
+						str: 'fpid',
+						id : this.upid,
 						fpid : this.productId
 					},
 					dataType : "JSON",
@@ -247,6 +249,7 @@ var app = new Vue({
 			if(this.a1 + this.a3 + this.a4 + this.a5 != 4) {
 				alert("请正确完成流程");
 			} else {
+				$("#addasset").modal('hide');
 				$.ajax({
 				    url : "/assets.ajax",
 				    type : "POST",
@@ -262,7 +265,7 @@ var app = new Vue({
                         console.log(code.code);
 				        if (code.code == "addSuc") {
 				            alert("添加成功");
-				            location.reload();
+							app.getData(app.page.index);
 				        } else if(code.code == "addErr") {
 				            alert("添加失败");
 				        }
@@ -277,15 +280,17 @@ var app = new Vue({
 			if (app.e1 == 1) {
 				this.upid = li.id;
 				this.upassetClass = li.assetClass;
-				this.financeId = li.financeId;
+				this.financialId = li.financeId;
 				this.productId = li.productId;
-				this.upstates = li.state();
+				this.upstates = li.state;
 				$("#updtasset").modal(
 					{
 						keyboard:false,
 						backdrop:"static"
 					}
 				);
+				app.findpid();
+				app.findfid();
 			} else {
 				alert("不是保管员无法操作！");
 			}
@@ -306,8 +311,9 @@ var app = new Vue({
 				this.u5 = 1;
 			}
 			if(this.u1 + this.a3 + this.a4 + this.u5 != 4) {
-				alert("请正确完成流程");
+				alert("请正确完成流程"+this.u1 + this.a3 + this.a4 + this.u5);
 			} else {
+				$("#updtasset").modal('hide');
 				$.ajax({
 					url : "/assets.ajax",
 					type : "POST",
@@ -324,7 +330,7 @@ var app = new Vue({
 						console.log(code.code);
 						if (code.code == "updtSuc") {
 							alert("修改成功");
-							location.reload();
+							app.getData(app.page.index);
 						} else if(code.code == "updtErr") {
 							alert("修改失败");
 						}

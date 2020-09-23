@@ -30,12 +30,6 @@ public class AccountController {
     private LoginService loginService;
 
     @Resource
-    private StaffService staffService;
-
-    @Resource
-    private AssetService assetService;
-
-    @Resource
     private JdbcService jdbcService;
 
 
@@ -69,7 +63,7 @@ public class AccountController {
             // 将session值 清空
             request.getSession().setAttribute("user", null);
             // 退出提示
-            WebUtil.jump(response, "index.html", "退出成功，三秒后跳转，如未跳转请点击这里", 3);
+            WebUtil.jump(response, "index.html", "退出成功，三秒后跳转，如未跳转请点击这里", 2);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -115,6 +109,9 @@ public class AccountController {
         json.put("code", code);
         return json.toJSONString();
     }
+
+    @Resource
+    private StaffService staffService;
 
     @RequestMapping("/staff.ajax")
     @ResponseBody
@@ -164,70 +161,59 @@ public class AccountController {
         return WebUtil.returnJsonTd(td);
     }
 
+    @Resource
+    private AssetService assetService;
 
     // 资产
-//    @RequestMapping("/assets.ajax")
-//    @ResponseBody
-//    public String asset(HttpServletRequest request, Integer index, String str, String ffid, String fpid, Asset asset) {
-//
-//        TableData<Asset> td = new TableData<>();
-//        // 状态码
-//        String code = "";
-//
-//        // 员工业务对象
-//        if ("paging".equals(str)) {
-//            td = assetService.paging(index, asset.getAssetClass(), asset.getState());
-//        }
-//        //分页
-//        List<Asset> list = new AssetsDaoImpl().doShow();
-//        List<Asset> data = new ArrayList<>();
-//        // 页数
-//        String indexStr = request.getParameter("index");
-//        //一页有多少条数据
-//        int size = 8;
-//        // 最后一页的数据数量
-//        int maxSize = (list.size() % size == 0) ? (list.size() / size) : (list.size() / size + 1);
-//        if ("paging".equals(str)) {
-//            data = assetService.paging(indexStr, size, list, data);
-//        }
-//
-//        // 删除
-//        if ("del".equals(str)) {
-//            code = JdbcUtils.delete("assets", "id", id);
-//        }
-//
-//        // 调用新增业务
-//        if ("add".equals(str)) {
-//            code = new AssetsDaoImpl().add(aclass, fid, pid, LoginDaoImpl.id, state);
-//        }
-//
-//        // 验证是否为保管员
-//        if ("exist".equals(str)) {
-//            code = JdbcUtils.isOrNot("保管员", "kep");
-//        }
-//
-//        // 验证财务id
-//        if ("ffid".equals(str)) {
-//            code = assetService.ffid(ffid);
-//        }
-//
-//        // 验证资源id
-//        if ("fpid".equals(str)) {
-//            code = assetService.fpid(fpid);
-//        }
-//
-//        // 更新
-//        if ("updt".equals(str)) {
-//            code = new AssetsDaoImpl().updt(upid, upaclass, upfid, uppid, LoginDaoImpl.id, upstate);
-//        }
+    @RequestMapping("/assets.ajax")
+    @ResponseBody
+    public String asset(HttpServletRequest request, Integer index, String str, String ffid, String fpid, Asset asset) {
+        TableData<Asset> td = new TableData<>();
+        // 状态码
+        String code = "";
 
-//        JSONObject json = new JSONObject();
-//        json.put("list", data);
-//        json.put("code", code);
-//        json.put("maxSize", maxSize);
-//        return json.toJSONString();
-//        return null;
-//    }
+        // 员工业务对象
+        if ("paging".equals(str)) {
+            td = assetService.paging(index, asset.getAssetClass(), asset.getState());
+        }
+
+        // 删除
+        if ("del".equals(str)) {
+            List<Integer> idList = jdbcService.idList(asset.getId());
+            code = jdbcService.delIds("assets", idList);
+        }
+
+//        // 调用新增业务
+        if ("add".equals(str)) {
+            asset.setCareStaffId(LoginServiceImpl.id);
+            code = assetService.add(asset);
+        }
+
+        // 验证是否为保管员
+        if ("exist".equals(str)) {
+            code = jdbcService.isOrNot("保管员", "kep");
+        }
+
+        // 验证财务id
+        if ("ffid".equals(str)) {
+            code = assetService.ffid(ffid, asset.getId());
+        }
+
+        // 验证资源id
+        if ("fpid".equals(str)) {
+            code = assetService.fpid(fpid, asset.getId());
+        }
+
+        // 更新
+        if ("updt".equals(str)) {
+            asset.setCareStaffId(LoginServiceImpl.id);
+            System.out.println(asset.toString());
+            code = assetService.updt(asset);
+        }
+
+        td.setCode(code);
+        return WebUtil.returnJsonTd(td);
+    }
 }
 
 
