@@ -1,17 +1,8 @@
 var app = new Vue({
     el : '#box',
     data : {
-		page : {
-			index : 1,
-			max : 0,
-			pager : []
-		},
-        maxSize: 0,
-        nowPage: 1,
-        list: [],
-        pageList: [],
+    	xPage : xPage,
         url: '',
-		e1 : 0,
 
         // 添加业务
 		a1 : 0,
@@ -30,17 +21,6 @@ var app = new Vue({
 		sex: '',
 		age: 0,
 		phone: '',
-
-		sd: {
-			work : '',
-			name : '',
-			uname : '',
-		},
-
-		ids: [],
-		// 全选
-		allId : '',
-
         // 修改业务
         u1: 0,
         u2: 0,
@@ -60,125 +40,83 @@ var app = new Vue({
 		upphone: ''
 	},
     methods: {
-    	// 全选
-    	all : function() {
-    		if (this.allId) {
-				for (var i = 0; i < this.list.length; i++) {
-					if (this.list[i].id != 1) {
-						this.ids.push(this.list[i].id);
-					}
-				}
+    	emMore : function() {
+			if (xPage.ids.length <= 0 ) {
+				layer.alert("请选择要解锁的数据");
 			} else {
-				this.ids = [];
+				var idstr = xPage.ids.join(",");
+				app.empower(idstr);
 			}
 		},
-        nextPage: function () {
-            if (this.page.index < this.page.max) {
-                this.page.index = this.page.index + 1;
-                this.getData(this.page.index);
-            }
-        },
-        upPage: function () {
-            if (this.page.index > 1) {
-                this.page.index = this.page.index - 1;
-                this.getData(this.page.index);
-            }
-        },
-		runPage : function(max) {
-			this.page.max = max;
-			app.page.pager = [];
-			for (var i = 1; i <= max; i++) {
-			    app.page.pager.push(i);
-			}
-		},
-        getData: function (indexPage) {
-            $.ajax({
-                url : "/staff.ajax",
-                type : "POST",
-                data : {
-                    index : indexPage,
-					work : app.sd.work,
-					name : app.sd.name,
-					uname : app.sd.uname,
-					str : 'paging'
-                },
-                dataType : "JSON",
-                success : function (data) {
-                	app.page.index = indexPage;
-                    app.list = data.dataList;
-                    app.runPage(data.pageCount);
-                },
-                error : function () {
-                    layer.alert("翻页失败，请联系管理员");
-                }
-            });
-        },
-		exist: function () {
-			$.ajax({
-				url : "/staff.ajax",
-				type : "POST",
-				data : {
-					str: 'exist',
-				},
-				dataType : "JSON",
-				success : function (code) {
-					if (code.code == "notadm") {
-						app.e1 = 0;
-					}
-					if (code.code == "isadm") {
-						app.e1 = 1;
-					}
-				},
-				error : function () {
-					layer.alert("验证失败，请联系管理员");
-				}
-			});
-		},
-		delmore: function () {
-
-        	if (this.ids.length <= 0 ) {
-        		layer.alert("请选择要删除的数据");
-			} else {
-				var idstr = this.ids.join(",");
-				this.del(idstr);
-			}
-		},
-        del: function (ids) {
-			if (app.e1 == 1) {
-				layer.confirm('是否要删除？', {
-					btn: ['确定','取消'] //按钮
-				}, function(){
-					$.ajax({
-						url : "/staff.ajax",
-						type : "POST",
-						data : {
-							id : ids,
-							str: 'del'
-						},
-						dataType : "JSON",
-						success : function (code) {
-							console.log(code.code);
-							if (code.code == "delSuc") {
-								layer.alert("删除成功");
-								app.ids = [];
-								app.getData(app.page.index);
-							} else if (code.code == "delErr") {
-								layer.alert("删除失败");
-							}
-						},
-						error : function () {
-							layer.alert("删除失败，请联系管理员");
+		empower: function(ids) {
+			if (xPage.work === 1) {
+				$.ajax({
+					url : "/staff.ajax",
+					type : "POST",
+					data : {
+						str: 'empower',
+						id: ids
+					},
+					dataType : "JSON",
+					success : function (code) {
+						console.log(code.code);
+						if (code.code === "updtSuc") {
+							layer.alert("已解锁");
+							xPage.ids = [];
+							xPage.getData(xPage.pageIndex);
+						} else if(code.code == "updtErr") {
+							layer.alert("解锁失败");
 						}
-					});
-				}, function(){
-					layer.msg('已取消删除', {icon: 1});
+					},
+					error : function () {
+						layer.alert("解锁失败，请联系管理员");
+					}
 				});
 			} else {
 				layer.alert("不是管理员，无法操作")
 			}
-        },
+		},
+		reMore : function() {
+			if (xPage.ids.length <= 0 ) {
+				layer.alert("请选择要锁定的数据");
+			} else {
+				var idstr = xPage.ids.join(",");
+				app.revoke(idstr);
+			}
+		},
+		revoke: function(ids) {
+			if (xPage.work == 1) {
+				$.ajax({
+					url : "/staff.ajax",
+					type : "POST",
+					data : {
+						str: 'revoke',
+						id: ids
+					},
+					dataType : "JSON",
+					success : function (code) {
+						console.log(code.code);
+						if (code.code == "updtSuc") {
+							layer.alert("已锁定");
+							xPage.ids = [];
+							xPage.getData(xPage.pageIndex);
+						} else if(code.code == "myself") {
+							layer.alert("你的账户被锁定");
+							location.reload();
+						} else if(code.code == "updtErr") {
+							layer.alert("锁定失败");
+						}
+					},
+					error : function () {
+						layer.alert("锁定失败，请联系管理员");
+					}
+				});
+			} else {
+				layer.alert("不是管理员，无法操作")
+			}
+		},
         addMod: function () {
-			if (app.e1 == 1) {
+			if (xPage.work == 1) {
 				$("#addform")[0].reset();
 				// document.getElementById("addform").reset();
 				$("#addStaff").modal(
@@ -266,10 +204,9 @@ var app = new Vue({
 				    },
 				    dataType : "JSON",
 				    success : function (code) {
-                        console.log(code.code);
 				        if (code.code == "addSuc") {
 				            layer.alert("添加成功");
-				            app.getData(app.page.index);
+				            xPage.getData(xPage.pageIndex);
 				        } else if(code.code == "addErr") {
 				            layer.alert("添加失败");
 				        }
@@ -280,65 +217,8 @@ var app = new Vue({
 				});
 			}
 		},
-		empower: function(id) {
-			if (app.e1 == 1) {
-				$.ajax({
-					url : "/staff.ajax",
-					type : "POST",
-					data : {
-						str: 'empower',
-						id: id
-					},
-					dataType : "JSON",
-					success : function (code) {
-						console.log(code.code);
-						if (code.code == "updtSuc") {
-							layer.alert("已解锁");
-							app.getData(app.page.index);
-						} else if(code.code == "updtErr") {
-							layer.alert("解锁失败");
-						}
-					},
-					error : function () {
-						layer.alert("解锁失败，请联系管理员");
-					}
-				});
-			} else {
-				layer.alert("不是管理员，无法操作")
-			}
-		},
-		revoke: function(id) {
-			if (app.e1 == 1) {
-				$.ajax({
-					url : "/staff.ajax",
-					type : "POST",
-					data : {
-						str: 'revoke',
-						id: id
-					},
-					dataType : "JSON",
-					success : function (code) {
-						console.log(code.code);
-						if (code.code == "updtSuc") {
-							layer.alert("已锁定");
-							app.getData(app.page.index);
-						} else if(code.code == "myself") {
-							layer.alert("你的账户被锁定");
-							location.reload();
-						} else if(code.code == "updtErr") {
-							layer.alert("锁定失败");
-						}
-					},
-					error : function () {
-						layer.alert("锁定失败，请联系管理员");
-					}
-				});
-			} else {
-				layer.alert("不是管理员，无法操作")
-			}
-		},
 		updt : function(li) {
-			if (app.e1 == 1) {
+			if (xPage.work == 1) {
 				this.upid = li.id;
 				this.upwork = li.work;
 				this.upname = li.name;
@@ -437,7 +317,7 @@ var app = new Vue({
 			            console.log(code.code);
 				        if (code.code == "uptSuc") {
 				            layer.alert("修改成功");
-							app.getData(app.page.index);
+							xPage.getData(xPage.pageIndex);
 				        } else if(code.code == "uptErr") {
 				            layer.alert("修改失败");
 				        }
@@ -450,5 +330,4 @@ var app = new Vue({
 		}
 	}
 });
-app.getData(1);
-app.exist();
+app.xPage.init("/staff.ajax", "管理员");

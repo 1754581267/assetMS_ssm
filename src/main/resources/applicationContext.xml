@@ -37,7 +37,7 @@
     <!-- 配置数据源 -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
         <property name="driverClassName" value="${jdbc.mysql.driverClassName}"/>
-        <property name="url" value="${jdbc.mysql.url}"/>
+        <property name="url" value="${jdbc.mysql.myurl}"/>
         <property name="username" value="${jdbc.mysql.username}"/>
         <property name="password" value="${jdbc.mysql.password}"/>
     </bean>

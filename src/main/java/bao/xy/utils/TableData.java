@@ -26,13 +26,15 @@ public class TableData<T> {
     // 数据列表
     private List<T> dataList;
 
-    public TableData() {
+    public TableData(PageDate pd) {
+        this.pageIndex = pd.getPageIndex();
+        this.pageSize = pd.getPageSize();
     }
 
-    public TableData(String code, Integer pageIndex, Integer pageSize, Integer pageCount, Integer dataCount, List<T> dataList) {
+    public TableData(String code, PageDate pd, Integer pageCount, Integer dataCount, List<T> dataList) {
         this.code = code;
-        this.pageIndex = pageIndex;
-        this.pageSize = pageSize;
+        this.pageIndex = pd.getPageIndex();
+        this.pageSize = pd.getPageSize();
         this.pageCount = pageCount;
         this.dataCount = dataCount;
         this.dataList = dataList;
@@ -63,6 +65,9 @@ public class TableData<T> {
     }
 
     public Integer getPageCount() {
+        if (this.dataCount != null && this.pageSize != null) {
+            this.pageCount = PageUtils.getLastPage(this.dataCount, pageSize);
+        }
         return pageCount;
     }
 

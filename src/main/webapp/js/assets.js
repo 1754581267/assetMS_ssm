@@ -2,23 +2,9 @@ Vue.config.devtools = true;
 var app = new Vue({
     el : '#box',
     data : {
-		page : {
-			index : 1,
-			max : 0,
-			pager : []
-		},
-        list: [],
-        pageList: [],
-        url: '',
+    	xPage: xPage,
 		allclass : ['食品','工具','器械'],
 		allstate : ['可用', '使用中', '报废'],
-		e1 : 0,
-		sd:{
-			assetClass : '',
-			state : '',
-		},
-		allId : '',
-		ids : [],
 
         // 添加业务
 		a1 : 0,
@@ -41,115 +27,6 @@ var app = new Vue({
 		upstates : ''
 	},
     methods: {
-    	all: function() {
-    		if (this.allid) {
-    			for (var i = 0; i < this.list.length; i++) {
-    				this.ids.push(this.list[i].id);
-				}
-			} else {
-    			this.ids = [];
-			}
-		},
-        nextPage: function () {
-            if (this.page.index < this.page.max) {
-            	this.page.index = this.page.index + 1;
-            	this.getData(this.page.index);
-			}
-        },
-        upPage: function () {
-            if (this.page.index > 1) {
-            	this.page.index = this.page.index - 1;
-            	this.getData(this.page.index);
-            }
-        },
-		runPage : function(max) {
-			this.page.max = max;
-			app.page.pager = [];
-			for (var i = 1; i <= max; i++) {
-				app.page.pager.push(i);
-			}
-		},
-        getData: function(indexPage) {
-            $.ajax({
-                url : "/assets.ajax",
-                type : "POST",
-                data : {
-					str : 'paging',
-                    index : indexPage,
-					assetClass : this.sd.assetClass,
-					state : this.sd.state
-                },
-                dataType : "JSON",
-                success : function (data) {
-					app.page.index = indexPage;
-					app.list = data.dataList;
-					app.runPage(data.pageCount);
-                },
-                error : function () {
-                    alert("翻页失败，请联系管理员");
-                }
-            });
-        },
-		delmore : function() {
-    		if (this.ids.length <= 0) {
-    			alert("请选择要删除的数据");
-			} else {
-    			var idstr = this.ids.join(",");
-    			this.del(idstr);
-			}
-		},
-        del: function (ids) {
-			if (app.e1 == 1) {
-				if (confirm("是否要删除?")) {
-					$.ajax({
-						url : "/assets.ajax",
-						type : "POST",
-						data : {
-							id : ids,
-							str: 'del'
-						},
-						dataType : "JSON",
-						success : function (code) {
-							console.log(code.code);
-							if (code.code == "delSuc") {
-								alert("删除成功");
-								app.getData(app.page.index);
-							} else if (code.code == "delErr") {
-								alert("删除失败");
-							}
-						},
-						error : function () {
-							alert("删除失败，请联系管理员");
-						}
-					});
-				} else {
-					alert("已取消删除");
-				}
-			} else {
-				alert("不是保管员无法操作！");
-			}
-        },
-		exist: function () {
-			$.ajax({
-				url : "/assets.ajax",
-				type : "POST",
-				data : {
-					str: 'exist',
-				},
-				dataType : "JSON",
-				success : function (code) {
-					if (code.code == "notkep") {
-							app.e1 = 0;
-					}
-					if (code.code == "iskep") {
-							app.e1 = 1;
-					}
-				},
-				error : function () {
-					alert("验证失败，请联系管理员");
-				}
-			});
-		},
 		findfid : function () {
 			if (this.financialId == '') {
 				$(".inputfid").html("<strong style=\"color: red\">请输入财务编号</strong>");
@@ -219,7 +96,7 @@ var app = new Vue({
 			}
 		},
 		addMod: function () {
-			if (app.e1 == 1) {
+			if (xPage.work == 1) {
 				$("#addform")[0].reset();
 				$("#addasset").modal(
 				    {
@@ -265,7 +142,7 @@ var app = new Vue({
                         console.log(code.code);
 				        if (code.code == "addSuc") {
 				            alert("添加成功");
-							app.getData(app.page.index);
+							xPage.getData(xPage.pageIndex);
 				        } else if(code.code == "addErr") {
 				            alert("添加失败");
 				        }
@@ -277,7 +154,7 @@ var app = new Vue({
 			}
 		},
 		updt : function(li) {
-			if (app.e1 == 1) {
+			if (xPage.work == 1) {
 				this.upid = li.id;
 				this.upassetClass = li.assetClass;
 				this.financialId = li.financeId;
@@ -330,7 +207,7 @@ var app = new Vue({
 						console.log(code.code);
 						if (code.code == "updtSuc") {
 							alert("修改成功");
-							app.getData(app.page.index);
+							xPage.getData(xPage.pageIndex);
 						} else if(code.code == "updtErr") {
 							alert("修改失败");
 						}
@@ -343,5 +220,4 @@ var app = new Vue({
 		}
 	}
 });
-app.getData(1);
-app.exist();
+xPage.init("/assets.ajax", "保管员")

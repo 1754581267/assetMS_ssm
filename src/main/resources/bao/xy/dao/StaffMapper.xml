@@ -20,7 +20,11 @@
     </delete>
 
     <update id="updp">
-        update staff set powers=#{powers} where ( id = #{id} )
+        update staff set powers=#{powers} where id in (
+            <foreach collection="ids" item="id" separator=",">
+                #{id}
+            </foreach>
+        )
     </update>
 
     <update id="updt">

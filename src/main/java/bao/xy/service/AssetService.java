@@ -1,6 +1,7 @@
 package bao.xy.service;
 
 import bao.xy.model.Asset;
+import bao.xy.utils.PageDate;
 import bao.xy.utils.TableData;
 
 import java.util.List;
@@ -12,14 +13,11 @@ import java.util.List;
 public interface AssetService {
 
     /**
-     * 分页
      *
-             * @param index 页数
-     * @param assetClass 资产类别
-     * @param state 资产状态
-     * @return data
+     * @param pd
+     * @return
      */
-    TableData<Asset> paging(Integer index, String assetClass, String state);
+    TableData<Asset> paging(PageDate pd);
 
     /**
      * 查找财务id

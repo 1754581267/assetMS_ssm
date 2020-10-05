@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.dao.FinanceMapper">
+
+    <insert id="add" keyProperty="finance.id" useGeneratedKeys="true">
+        INSERT INTO finance (staff_id, proof, entry_date, state)
+        VALUES (#{finance.staffId}, #{finance.proof}, #{finance.entryDate}, #{finance.state})
+    </insert>
+
+    <select id="paging" resultMap="financeMap">
+        select * from finance t1 <include refid="whereSql"></include>
+    </select>
+
+    <select id="listCount" resultType="java.lang.Integer">
+        select count(*) from finance <include refid="whereSql"></include>
+    </select>
+
+    <resultMap id="financeMap" type="bao.xy.model.Finance">
+        <result column="staff_id" property="staffId"></result>
+        <result column="entry_date" property="entryDate"></result>
+    </resultMap>
+
+    <sql id="whereSql">
+        <where>
+            <if test="proof != null and proof != ''">
+                AND t1.proof LIKE CONCAT('%', #{proof}, '%')
+            </if>
+            <if test="state != null and state != ''">
+                AND t1.state LIKE CONCAT('%', #{state}, '%')
+            </if>
+        </where>
+    </sql>
+
+
+</mapper>

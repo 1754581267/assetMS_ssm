@@ -3,10 +3,7 @@ package bao.xy.controller;
 import bao.xy.model.*;
 import bao.xy.service.*;
 import bao.xy.service.Impl.LoginServiceImpl;
-import bao.xy.utils.SpringUtils;
-import bao.xy.utils.StringUtil;
-import bao.xy.utils.TableData;
-import bao.xy.utils.WebUtil;
+import bao.xy.utils.*;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +13,9 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -115,33 +114,35 @@ public class AccountController {
 
     @RequestMapping("/staff.ajax")
     @ResponseBody
-    public String staff(HttpServletRequest request, String str, Integer index, Staff staff) {
+    public String staff(HttpServletRequest request, String str, PageDate pd, Staff staff) {
 
         //一页有多少条数据
-        TableData<Staff> td = new TableData<>();
+        TableData<Staff> td = new TableData<>(pd);
 
         String code = "";
 
         if ("paging".equals(str)) {
-            td = staffService.paging(index, staff.getWork(), staff.getName(), staff.getUname());
+            td = staffService.paging(pd);
+            code = jdbcService.isOrNot("管理员", "adm");
+        }
+
+        List<Integer> idList = new ArrayList<>();
+        if (staff.getId() != null && staff.getId().length() > 2) {
+            idList = jdbcService.idList(staff.getId());
         }
 
         // 调用的删除业务
         if ("del".equals(str)) {
-            List<Integer> idList = jdbcService.idList(staff.getId());
-            code = jdbcService.delIds("Staff", idList);
-        }
-
-        if ("exist".equals(str)) {
-            code = jdbcService.isOrNot("管理员", "adm");
+            code = jdbcService.delIds("staff", idList);
         }
 
         if ("empower".equals(str)) {
-            code = staffService.updp(staff.getId(), "已解锁");
+
+            code = staffService.updp(idList, "已解锁");
         }
 
         if ("revoke".equals(str)) {
-            code = staffService.updp(staff.getId(), "已锁定");
+            code = staffService.updp(idList, "已锁定");
             if (code.equals("myself")) {
                 request.getSession().setAttribute("user", null);
             }
@@ -167,14 +168,15 @@ public class AccountController {
     // 资产
     @RequestMapping("/assets.ajax")
     @ResponseBody
-    public String asset(HttpServletRequest request, Integer index, String str, String ffid, String fpid, Asset asset) {
-        TableData<Asset> td = new TableData<>();
+    public String asset(PageDate pd, String str, String ffid, String fpid, Asset asset) {
+        TableData<Asset> td = new TableData<>(pd);
         // 状态码
         String code = "";
 
         // 员工业务对象
         if ("paging".equals(str)) {
-            td = assetService.paging(index, asset.getAssetClass(), asset.getState());
+            td = assetService.paging(pd);
+            code = jdbcService.isOrNot("保管员", "kep");
         }
 
         // 删除
@@ -183,15 +185,10 @@ public class AccountController {
             code = jdbcService.delIds("assets", idList);
         }
 
-//        // 调用新增业务
+        // 调用新增业务
         if ("add".equals(str)) {
             asset.setCareStaffId(LoginServiceImpl.id);
             code = assetService.add(asset);
-        }
-
-        // 验证是否为保管员
-        if ("exist".equals(str)) {
-            code = jdbcService.isOrNot("保管员", "kep");
         }
 
         // 验证财务id
@@ -209,6 +206,50 @@ public class AccountController {
             asset.setCareStaffId(LoginServiceImpl.id);
             System.out.println(asset.toString());
             code = assetService.updt(asset);
+        }
+
+        td.setCode(code);
+        return WebUtil.returnJsonTd(td);
+    }
+
+    @Resource
+    private FinanceService financeService;
+    @RequestMapping("/finance.ajax")
+    @ResponseBody
+    public String finance (PageDate pd, String str, Finance finance) {
+        TableData<Finance> td = new TableData<>(pd);
+
+        String code = "";
+
+        if ("paging".equals(str)) {
+            td = financeService.paging(pd);
+            code = jdbcService.isOrNot("保管员", "kep");
+        }
+
+        // 删除
+        if ("del".equals(str)) {
+            List<Integer> idList = jdbcService.idList(finance.getId());
+            code = jdbcService.delIds("finance", idList);
+        }
+
+        Date date = new Date();
+
+        // 生成凭证号
+        if ("form".equals(str)) {
+            SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMddHHmmss");
+            code = sdf.format(date);
+        }
+
+        // 新增
+        if ("add".equals(str)) {
+            finance.setStaffId(LoginServiceImpl.id);
+            finance.setEntryDate(DateUtils.Date());
+            code = financeService.add(finance);
+        }
+
+        // 修改
+        if ("updt".equals(str)) {
+            code = financeService.updt(finance);
         }
 
         td.setCode(code);

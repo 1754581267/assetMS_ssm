@@ -1,0 +1,2369 @@
+Index: src/main/java/bao/xy/service/Impl/StaffServiceImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/Impl/StaffServiceImpl.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/service/Impl/StaffServiceImpl.java	(date 1601813140496)
+@@ -3,8 +3,10 @@
+ import bao.xy.dao.StaffMapper;
+ import bao.xy.model.Staff;
+ import bao.xy.service.StaffService;
++import bao.xy.utils.PageDate;
+ import bao.xy.utils.PageUtils;
+ import bao.xy.utils.TableData;
++import com.alibaba.fastjson.JSONObject;
+ import org.apache.ibatis.session.RowBounds;
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.stereotype.Service;
+@@ -21,33 +23,37 @@
+ public class StaffServiceImpl implements StaffService {
+ 
+ 
+-    @Value("${size}")
+-    private int size;
+-
+     @Resource
+     private StaffMapper mapper;
+ 
+     /**
+      *
+-     * @param index
++     * @param pd
+      * @return
+      */
+     @Override
+     @Transactional( rollbackFor = Exception.class)
+-    public TableData<Staff> paging(Integer index, String work, String name, String uname) {
++    public TableData<Staff> paging(PageDate pd) {
++        TableData<Staff> td = new TableData(pd);
++        String work = null;
++        String name = null;
++        String uname = null;
++        JSONObject sd = pd.getScoutData();
++        if (sd != null) {
++            work = sd.getString("work");
++            name = sd.getString("name");
++            uname = sd.getString("uname");
++        }
+ 
+-        TableData<Staff> td = new TableData();
+-        td.setPageSize(size);
+-        td.setPageIndex(index);
+         Integer count = mapper.listCount(work, name, uname);
+         td.setDataCount(count);
+-        td.setPageCount(PageUtils.getLastPage(count, size));
++//        td.setPageCount(PageUtils.getLastPage(count, size));
+ 
+         if (count <= 0) {
+             return td;
+         }
+ 
+-        List<Staff> list = mapper.paging(PageUtils.getRowBounds(index, size), work, name, uname);
++        List<Staff> list = mapper.paging(PageUtils.getRowBounds(pd.getPageIndex(), pd.getPageSize()), work, name, uname);
+         td.setDataList(list);
+         return td;
+ 
+@@ -55,22 +61,21 @@
+ 
+     /**
+      * 修改权限
+-     *
+      * @param id 员工id
+      * @param powers 权限
+-     * @return code
++     * @return
+      */
+     @Override
+     @Transactional( rollbackFor = Exception.class)
+-    public String updp(String id, String powers) {
++    public String updp(List<Integer> id, String powers) {
++//        System.out.println(id);
+         String code = "";
+         Integer updp = mapper.updp(id, powers);
+-
+         if (updp > 0) {
+             code = "updtSuc";
+-            if (id.equals(LoginServiceImpl.id) && powers.equals("已锁定")) {
+-                code = "myself";
+-            }
++//            if (id.equals(LoginServiceImpl.id) && powers.equals("已锁定")) {
++//                code = "myself";
++//            }
+         } else {
+             code = "updtErr";
+         }
+Index: src/main/java/bao/xy/service/StaffService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/StaffService.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/service/StaffService.java	(date 1601812506620)
+@@ -1,6 +1,7 @@
+ package bao.xy.service;
+ 
+ import bao.xy.model.Staff;
++import bao.xy.utils.PageDate;
+ import bao.xy.utils.TableData;
+ import javafx.scene.control.Tab;
+ import org.springframework.transaction.annotation.Transactional;
+@@ -16,10 +17,10 @@
+     /**
+      * 查询
+      *
+-     * @param index
++     * @param pd
+      * @return
+      */
+-    TableData<Staff> paging(Integer index, String work, String name, String uname);
++    TableData<Staff> paging(PageDate pd);
+ 
+     /**
+      * 删除
+@@ -40,7 +41,7 @@
+      * @param powers 权限
+      * @return code
+      */
+-    String updp(String id, String powers);
++    String updp(List<Integer> id, String powers);
+ 
+     /**
+      * * 修改员工信息
+Index: pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- pom.xml	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ pom.xml	(date 1601291315729)
+@@ -124,6 +124,13 @@
+         </dependency>
+         <!-- MyBatis相关依赖 Ends -->
+ 
++        <!-- https://mvnrepository.com/artifact/redis.clients/jedis -->
++        <dependency>
++            <groupId>redis.clients</groupId>
++            <artifactId>jedis</artifactId>
++            <version>3.2.0</version>
++        </dependency>
++
+         <!-- mysql  -->
+         <dependency>
+             <groupId>mysql</groupId>
+Index: src/main/java/bao/xy/redis/RedisTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/redis/RedisTest.java	(date 1601523723425)
++++ src/main/java/bao/xy/redis/RedisTest.java	(date 1601523723425)
+@@ -0,0 +1,75 @@
++//package bao.xy.redis;
++//
++//import com.alibaba.fastjson.JSON;
++//import com.alibaba.fastjson.JSONObject;
++//import redis.clients.jedis.Jedis;
++//
++///**
++// * @Description:
++// * @CreateTime: 2020-09-28-19-14
++// */
++//public class RedisTest {
++//
++//    public static void main(String[] args) {
++//        Jedis j = new Jedis("118.31.43.132", 18264);
++//        j.auth("997371");
++//
++////        j.set("aaa", "www");
++//
++//        JSONObject json = new JSONObject();
++////        json.put("bbb", "asdf");
++////        String s = json.toJSONString();
++////        j.set("json1", s);
++////        System.out.println(j.get("aaa"));
++//
++////        String jsonStr = j.get("json1");
++////        JSONObject json1 = (JSONObject) JSONObject.parse(jsonStr);
++////        System.out.println(json1);
++////        System.out.println(json1.get("bbb"));
++//
++////        j.append("aaa","ccc");
++//
++////        System.out.println(j.strlen("json1"));
++//
++////        j.rpush("rList","r1", "r2", "r3");
++////        j.lpush("lList", "l1", "l2", "l3");
++////        System.out.println(j.lrange("lList", 0, -1));
++////        System.out.println(j.lrange("rList", 0, -1));
++//
++//        // set
++//        // 添加数据
++////        j.sadd("set", "123", "345");
++////        j.sadd("set", "789", "456");
++//        // 删除数据
++////        j.srem("set", "123");
++//
++////        System.out.println(j.smembers("set"));
++//
++//
++//        // zset 通过score排序
++//        j.zadd("zset", 1, "s1");
++//        j.zadd("zset", 5, "s5");
++//        j.zadd("zset", 3, "s3");
++//        j.zadd("zset", 4, "s4");
++//        j.zadd("zset", 2, "s2");
++//        System.out.println(j.zrange("zset", 0, -1));
++//
++//
++//        // hash
++//        // set
++////        j.hset("hash", "aa", "aaa");
++////        j.hset("hash", "bb", "bbb");
++////        j.hset("hash", "cc", "ccc");
++//        // get
++////        System.out.println(j.hget("hash", "aa"));
++////
++////        // del
++////        j.hdel("hash", "bb");
++//
++//
++//
++//        j.close();
++//
++//
++//    }
++//}
+Index: src/main/resources/bao/xy/dao/StaffMapper.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/bao/xy/dao/StaffMapper.xml	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/resources/bao/xy/dao/StaffMapper.xml	(date 1601812843900)
+@@ -20,7 +20,11 @@
+     </delete>
+ 
+     <update id="updp">
+-        update staff set powers=#{powers} where ( id = #{id} )
++        update staff set powers=#{powers} where id in (
++            <foreach collection="ids" item="id" separator=",">
++                #{id}
++            </foreach>
++        )
+     </update>
+ 
+     <update id="updt">
+Index: src/main/java/bao/xy/service/Impl/JdbcServiceImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/Impl/JdbcServiceImpl.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/service/Impl/JdbcServiceImpl.java	(date 1601890027471)
+@@ -49,9 +49,7 @@
+     @Override
+     @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
+     public boolean updt(Integer num, String table, String k, String v, String wherek, String wherev) {
+-
+         Integer updt = mapper.updt(table, k, v, wherek, wherev);
+-        System.out.println(updt);
+         if (updt >= num) {
+             return true;
+         } else {
+Index: src/main/java/bao/xy/redis/JedisPoolUtils.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/redis/JedisPoolUtils.java	(date 1601523723459)
++++ src/main/java/bao/xy/redis/JedisPoolUtils.java	(date 1601523723459)
+@@ -0,0 +1,38 @@
++//package bao.xy.redis;
++//
++//import redis.clients.jedis.JedisPool;
++//import redis.clients.jedis.JedisPoolConfig;
++//
++///**
++// * @Description: jedisPool 单例写法
++// * @CreateTime: 2020-09-28-20-24
++// */
++//public class JedisPoolUtils {
++//
++//    // 被volatile修饰的变量不会被本地线程缓存，对该变量的读写都是直接操作共享内存。
++//    private static volatile JedisPool jedisPool = null;
++//
++//    // 不让外部new
++//    private JedisPoolUtils() {}
++//
++//    public static JedisPool getJedisPool() {
++//        if (jedisPool == null) {
++//            synchronized (JedisPoolUtils.class) {
++//                if (jedisPool == null) {
++//                    JedisPoolConfig jpc = new JedisPoolConfig();
++//                    // 控制一个pool可分配多少个jedis实例
++//                    jpc.setMaxTotal(1000);
++//                    // 最少保存多少条
++//                    jpc.setMaxIdle(30);
++//                    // 超时
++//                    jpc.setMaxWaitMillis(10 * 1000);
++//                    // ping
++//                    jpc.setTestOnBorrow(true);
++//                    jedisPool = new JedisPool(jpc, "118.31.43.132", 18264, 10 * 1000, "997371");
++//                }
++//            }
++//        }
++//        return jedisPool;
++//    }
++//
++//}
+Index: src/main/java/bao/xy/redis/JedisPoolTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/redis/JedisPoolTest.java	(date 1601523723383)
++++ src/main/java/bao/xy/redis/JedisPoolTest.java	(date 1601523723383)
+@@ -0,0 +1,19 @@
++//package bao.xy.redis;
++//
++//import redis.clients.jedis.Jedis;
++//import redis.clients.jedis.JedisPool;
++//
++///**
++// * @Description:
++// * @CreateTime: 2020-09-28-20-32
++// */
++//public class JedisPoolTest {
++//    public static void main(String[] args) {
++//        JedisPool jedisPool = JedisPoolUtils.getJedisPool();
++//        Jedis j = jedisPool.getResource();
++//        j.set("jPool", "a123s456");
++//
++//    }
++//
++//
++//}
+Index: src/main/webapp/js/staff.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/js/staff.js	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/webapp/js/staff.js	(date 1601822122803)
+@@ -1,17 +1,8 @@
+ var app = new Vue({
+     el : '#box',
+     data : {
+-		page : {
+-			index : 1,
+-			max : 0,
+-			pager : []
+-		},
+-        maxSize: 0,
+-        nowPage: 1,
+-        list: [],
+-        pageList: [],
++    	xPage : xPage,
+         url: '',
+-		e1 : 0,
+ 
+         // 添加业务
+ 		a1 : 0,
+@@ -30,17 +21,6 @@
+ 		sex: '',
+ 		age: 0,
+ 		phone: '',
+-
+-		sd: {
+-			work : '',
+-			name : '',
+-			uname : '',
+-		},
+-
+-		ids: [],
+-		// 全选
+-		allId : '',
+-
+         // 修改业务
+         u1: 0,
+         u2: 0,
+@@ -60,125 +40,83 @@
+ 		upphone: ''
+ 	},
+     methods: {
+-    	// 全选
+-    	all : function() {
+-    		if (this.allId) {
+-				for (var i = 0; i < this.list.length; i++) {
+-					if (this.list[i].id != 1) {
+-						this.ids.push(this.list[i].id);
+-					}
+-				}
++    	emMore : function() {
++			if (xPage.ids.length <= 0 ) {
++				layer.alert("请选择要解锁的数据");
+ 			} else {
+-				this.ids = [];
+-			}
+-		},
+-        nextPage: function () {
+-            if (this.page.index < this.page.max) {
+-                this.page.index = this.page.index + 1;
+-                this.getData(this.page.index);
+-            }
+-        },
+-        upPage: function () {
+-            if (this.page.index > 1) {
+-                this.page.index = this.page.index - 1;
+-                this.getData(this.page.index);
+-            }
+-        },
+-		runPage : function(max) {
+-			this.page.max = max;
+-			app.page.pager = [];
+-			for (var i = 1; i <= max; i++) {
+-			    app.page.pager.push(i);
++				var idstr = xPage.ids.join(",");
++				app.empower(idstr);
+ 			}
+ 		},
+-        getData: function (indexPage) {
+-            $.ajax({
+-                url : "/staff.ajax",
+-                type : "POST",
+-                data : {
+-                    index : indexPage,
+-					work : app.sd.work,
+-					name : app.sd.name,
+-					uname : app.sd.uname,
+-					str : 'paging'
+-                },
+-                dataType : "JSON",
+-                success : function (data) {
+-                	app.page.index = indexPage;
+-                    app.list = data.dataList;
+-                    app.runPage(data.pageCount);
+-                },
+-                error : function () {
+-                    layer.alert("翻页失败，请联系管理员");
+-                }
+-            });
+-        },
+-		exist: function () {
+-			$.ajax({
+-				url : "/staff.ajax",
+-				type : "POST",
+-				data : {
+-					str: 'exist',
+-				},
+-				dataType : "JSON",
+-				success : function (code) {
+-					if (code.code == "notadm") {
+-						app.e1 = 0;
+-					}
+-					if (code.code == "isadm") {
+-						app.e1 = 1;
+-					}
+-				},
+-				error : function () {
+-					layer.alert("验证失败，请联系管理员");
+-				}
+-			});
++		empower: function(ids) {
++			if (xPage.work === 1) {
++				$.ajax({
++					url : "/staff.ajax",
++					type : "POST",
++					data : {
++						str: 'empower',
++						id: ids
++					},
++					dataType : "JSON",
++					success : function (code) {
++						console.log(code.code);
++						if (code.code === "updtSuc") {
++							layer.alert("已解锁");
++							xPage.ids = [];
++							xPage.getData(xPage.pageIndex);
++						} else if(code.code == "updtErr") {
++							layer.alert("解锁失败");
++						}
++					},
++					error : function () {
++						layer.alert("解锁失败，请联系管理员");
++					}
++				});
++			} else {
++				layer.alert("不是管理员，无法操作")
++			}
+ 		},
+-		delmore: function () {
+-
+-        	if (this.ids.length <= 0 ) {
+-        		layer.alert("请选择要删除的数据");
++		reMore : function() {
++			if (xPage.ids.length <= 0 ) {
++				layer.alert("请选择要锁定的数据");
+ 			} else {
+-				var idstr = this.ids.join(",");
+-				this.del(idstr);
++				var idstr = xPage.ids.join(",");
++				app.revoke(idstr);
+ 			}
+ 		},
+-        del: function (ids) {
+-			if (app.e1 == 1) {
+-				layer.confirm('是否要删除？', {
+-					btn: ['确定','取消'] //按钮
+-				}, function(){
+-					$.ajax({
+-						url : "/staff.ajax",
+-						type : "POST",
+-						data : {
+-							id : ids,
+-							str: 'del'
+-						},
+-						dataType : "JSON",
+-						success : function (code) {
+-							console.log(code.code);
+-							if (code.code == "delSuc") {
+-								layer.alert("删除成功");
+-								app.ids = [];
+-								app.getData(app.page.index);
+-							} else if (code.code == "delErr") {
+-								layer.alert("删除失败");
+-							}
+-						},
+-						error : function () {
+-							layer.alert("删除失败，请联系管理员");
+-						}
+-					});
+-				}, function(){
+-					layer.msg('已取消删除', {icon: 1});
++		revoke: function(ids) {
++			if (xPage.work == 1) {
++				$.ajax({
++					url : "/staff.ajax",
++					type : "POST",
++					data : {
++						str: 'revoke',
++						id: ids
++					},
++					dataType : "JSON",
++					success : function (code) {
++						console.log(code.code);
++						if (code.code == "updtSuc") {
++							layer.alert("已锁定");
++							xPage.ids = [];
++							xPage.getData(xPage.pageIndex);
++						} else if(code.code == "myself") {
++							layer.alert("你的账户被锁定");
++							location.reload();
++						} else if(code.code == "updtErr") {
++							layer.alert("锁定失败");
++						}
++					},
++					error : function () {
++						layer.alert("锁定失败，请联系管理员");
++					}
+ 				});
+ 			} else {
+ 				layer.alert("不是管理员，无法操作")
+ 			}
+-        },
++		},
+         addMod: function () {
+-			if (app.e1 == 1) {
++			if (xPage.work == 1) {
+ 				$("#addform")[0].reset();
+ 				// document.getElementById("addform").reset();
+ 				$("#addStaff").modal(
+@@ -266,10 +204,9 @@
+ 				    },
+ 				    dataType : "JSON",
+ 				    success : function (code) {
+-                        console.log(code.code);
+ 				        if (code.code == "addSuc") {
+ 				            layer.alert("添加成功");
+-				            app.getData(app.page.index);
++				            xPage.getData(xPage.pageIndex);
+ 				        } else if(code.code == "addErr") {
+ 				            layer.alert("添加失败");
+ 				        }
+@@ -280,65 +217,8 @@
+ 				});
+ 			}
+ 		},
+-		empower: function(id) {
+-			if (app.e1 == 1) {
+-				$.ajax({
+-					url : "/staff.ajax",
+-					type : "POST",
+-					data : {
+-						str: 'empower',
+-						id: id
+-					},
+-					dataType : "JSON",
+-					success : function (code) {
+-						console.log(code.code);
+-						if (code.code == "updtSuc") {
+-							layer.alert("已解锁");
+-							app.getData(app.page.index);
+-						} else if(code.code == "updtErr") {
+-							layer.alert("解锁失败");
+-						}
+-					},
+-					error : function () {
+-						layer.alert("解锁失败，请联系管理员");
+-					}
+-				});
+-			} else {
+-				layer.alert("不是管理员，无法操作")
+-			}
+-		},
+-		revoke: function(id) {
+-			if (app.e1 == 1) {
+-				$.ajax({
+-					url : "/staff.ajax",
+-					type : "POST",
+-					data : {
+-						str: 'revoke',
+-						id: id
+-					},
+-					dataType : "JSON",
+-					success : function (code) {
+-						console.log(code.code);
+-						if (code.code == "updtSuc") {
+-							layer.alert("已锁定");
+-							app.getData(app.page.index);
+-						} else if(code.code == "myself") {
+-							layer.alert("你的账户被锁定");
+-							location.reload();
+-						} else if(code.code == "updtErr") {
+-							layer.alert("锁定失败");
+-						}
+-					},
+-					error : function () {
+-						layer.alert("锁定失败，请联系管理员");
+-					}
+-				});
+-			} else {
+-				layer.alert("不是管理员，无法操作")
+-			}
+-		},
+ 		updt : function(li) {
+-			if (app.e1 == 1) {
++			if (xPage.work == 1) {
+ 				this.upid = li.id;
+ 				this.upwork = li.work;
+ 				this.upname = li.name;
+@@ -437,7 +317,7 @@
+ 			            console.log(code.code);
+ 				        if (code.code == "uptSuc") {
+ 				            layer.alert("修改成功");
+-							app.getData(app.page.index);
++							xPage.getData(xPage.pageIndex);
+ 				        } else if(code.code == "uptErr") {
+ 				            layer.alert("修改失败");
+ 				        }
+@@ -450,5 +330,4 @@
+ 		}
+ 	}
+ });
+-app.getData(1);
+-app.exist();
++app.xPage.init("/staff.ajax", "管理员");
+Index: src/main/resources/applicationContext.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/applicationContext.xml	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/resources/applicationContext.xml	(date 1601822495335)
+@@ -37,7 +37,7 @@
+     <!-- 配置数据源 -->
+     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+         <property name="driverClassName" value="${jdbc.mysql.driverClassName}"/>
+-        <property name="url" value="${jdbc.mysql.url}"/>
++        <property name="url" value="${jdbc.mysql.myurl}"/>
+         <property name="username" value="${jdbc.mysql.username}"/>
+         <property name="password" value="${jdbc.mysql.password}"/>
+     </bean>
+Index: src/main/java/bao/xy/utils/TableData.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/utils/TableData.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/utils/TableData.java	(date 1601787467975)
+@@ -26,13 +26,15 @@
+     // 数据列表
+     private List<T> dataList;
+ 
+-    public TableData() {
++    public TableData(PageDate pd) {
++        this.pageIndex = pd.getPageIndex();
++        this.pageSize = pd.getPageSize();
+     }
+ 
+-    public TableData(String code, Integer pageIndex, Integer pageSize, Integer pageCount, Integer dataCount, List<T> dataList) {
++    public TableData(String code, PageDate pd, Integer pageCount, Integer dataCount, List<T> dataList) {
+         this.code = code;
+-        this.pageIndex = pageIndex;
+-        this.pageSize = pageSize;
++        this.pageIndex = pd.getPageIndex();
++        this.pageSize = pd.getPageSize();
+         this.pageCount = pageCount;
+         this.dataCount = dataCount;
+         this.dataList = dataList;
+@@ -63,6 +65,9 @@
+     }
+ 
+     public Integer getPageCount() {
++        if (this.dataCount != null && this.pageSize != null) {
++            this.pageCount = PageUtils.getLastPage(this.dataCount, pageSize);
++        }
+         return pageCount;
+     }
+ 
+Index: src/main/webapp/finance.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/finance.html	(date 1601886261003)
++++ src/main/webapp/finance.html	(date 1601886261003)
+@@ -0,0 +1,187 @@
++<!DOCTYPE html>
++<html lang="zh-CN">
++<head>
++    <meta charset="utf-8">
++    <meta http-equiv="X-UA-Compatible" content="IE=edge">
++    <meta name="viewport" content="width=device-width, initial-scale=1">
++    <title>财务列表</title>
++
++    <link href="./plug-ins/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
++    <link href="./css/current.css" rel="stylesheet">
++    <style>
++        .lh>tbody>tr>td {
++            line-height: 33px;
++            padding-top: 0px;
++            padding-bottom: 0px;
++        }
++    </style>
++</head>
++<body>
++<div id="box">
++    <div class="panel panel-default">
++        <div class="panel-heading">财务数据搜索界面</div>
++        <div class="panel-body">
++            <div class="form-inline">
++                <div class="form-group">
++                    <div class="input-group">
++                        <div class="input-group-addon">凭证号</div>
++                        <input type="text" class="form-control" placeholder="请输入凭证号" v-model="xPage.sd.proof">
++                        <div class="input-group-addon">状态</div>
++                        <input type="text" class="form-control" placeholder="请输入状态" v-model="xPage.sd.state">
++                    </div>
++                </div>
++                <button type="button" class="btn btn-primary" @click="xPage.getData(1)">
++                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
++                    搜索
++                </button>
++            </div>
++        </div>
++        <div class="panel-heading">财务数据操作界面</div>
++        <div class="panel-body">
++            <button type="button" class="btn btn-success" @click="addMod">
++                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
++                添加
++            </button>
++            <button type="button" class="btn btn-danger" @click="xPage.delmore()">
++                <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
++                删除
++            </button>
++        </div>
++    </div>
++    <div id="show">
++        <table class="table table-hover table-bordered lh" >
++            <tr>
++                <th>
++                    <input type="checkbox" v-model="xPage.allId" @change="xPage.all()"> 全选
++                </th>
++                <th>编号</th>
++                <th>员工编号</th>
++                <th>凭证号</th>
++                <th>入账时间</th>
++                <th>状态</th>
++                <th>操作</th>
++            </tr>
++            <tr v-for="li in xPage.dataList">
++                <td>
++                    <input type="checkbox" :value="li.id" v-model="xPage.ids">
++                </td>
++                <td>{{li.id}}</td>
++                <td>{{li.staffId}}</td>
++                <td>{{li.proof}}</td>
++                <td>{{li.entryDate}}</td>
++                <td>{{li.state}}</td>
++                <td>
++                    <div class="btn-group  btn-group-xs" role="group">
++                        <button type="button" class="btn btn-danger" @click="xPage.del(li.id, 'del')">
++                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
++                            删除
++                        </button>
++                        <button type="button" class="btn btn-warning" @click="updt(li)">
++                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
++                            修改
++                        </button>
++                    </div>
++                </td>
++            </tr>
++        </table>
++        <div class="myNav navbar-fixed-bottom">
++            <nav aria-label="Page navigation" class="text-center">
++                <ul class="pagination">
++                    <li :class="{disabled: (xPage.pageIndex == 1)}" >
++                        <a @click="xPage.upPage()" aria-label="Previous">
++                            <span aria-hidden="true">&laquo;</span>
++                        </a>
++                    </li>
++                    <li v-for="page in xPage.pageList" :class="{disabled: (xPage.pageIndex == page)}" >
++                        <a @click="xPage.getData(page)" >{{page}}</a>
++                    </li>
++                    <li :class="{disabled: (xPage.pageIndex == xPage.pageMax)}" >
++                        <a @click="xPage.nextPage()" aria-label="Next">
++                            <span aria-hidden="true">&raquo;</span>
++                        </a>
++                    </li>
++                    <li class="pager-label" style="line-height: 34px">
++                        &nbsp;第 <input type="text" v-model="xPage.pageIndex" style="width: 25px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
++                        每页 <input type="number" min="1" max="10" v-model="xPage.pageSize" style="width: 43px; height: 25px;" onchange="xPage.getData(1)"> 条数据 共{{xPage.dataCount}}项
++                    </li>
++                </ul>
++            </nav>
++        </div>
++    </div>
++    <!-- 添加财务模态框 -->
++    <div class="modal" id="addfina" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
++        <div class="modal-dialog" style="width: 500px;">
++            <div class="modal-content">
++                <div class="modal-header">
++                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
++                    <h4 class="modal-title">添加财务信息</h4>
++                </div>
++                <div class="modal-body">
++                    <form class="form-horizontal" id="addform" action="/add" @submit.prevent="submit()" method="post" >
++                        <div class="form-group">
++                            <label for="proof" class="col-sm-3 control-label">凭证号:</label>
++                            <div class="col-sm-5">
++                                <input type="text" class="form-control" v-model="proof" readonly placeholder="请生成凭证号">
++                                <div id="prof"></div>
++                            </div>
++                            <button type="button" id="proof" class="btn btn-primary col-sm-3" @click="form()" >生成凭证号</button>
++                        </div>
++                        <div class="form-group">
++                            <label for="state" class="col-sm-3 control-label">状态:</label>
++                            <div class="col-sm-8">
++                                <select class="form-control" v-model="state" id="state">
++                                    <option value="">未选择</option>
++                                    <option value="可用">可用</option>
++                                    <option value="销账">销账</option>
++                                </select>
++                                <div id="sta"></div>
++                            </div>
++                        </div>
++                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
++                            <button type="submit" class="btn btn-primary">保存</button>
++                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
++                        </div>
++                    </form>
++                </div>
++            </div>
++        </div>
++    </div>
++    <!-- 更改财务模态框 -->
++    <div class="modal" id="updtfina" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
++        <div class="modal-dialog" style="width: 500px;">
++            <div class="modal-content">
++                <div class="modal-header">
++                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
++                    <h4 class="modal-title">更改财务信息</h4>
++                </div>
++                <div class="modal-body">
++                    <form class="form-horizontal" @submit.prevent="submit1()" >
++                        <div class="form-group">
++                            <label for="upstate" class="col-sm-3 control-label">状态:</label>
++                            <div class="col-sm-8">
++                                <select class="form-control" v-model="upstate" id="upstate">
++                                    <option value="">未选择</option>
++                                    <option value="可用">可用</option>
++                                    <option value="销账">销账</option>
++                                </select>
++                                <div id="upsta"></div>
++                            </div>
++                        </div>
++                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
++                            <button type="submit" class="btn btn-primary">保存</button>
++                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
++                        </div>
++                    </form>
++                </div>
++            </div>
++        </div>
++    </div>
++</div>
++<script src="./plug-ins/jq/jquery.min.js"></script>
++<script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
++<script src="./plug-ins/layer/layer.js"></script>
++<script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
++<script src="js/current.js"></script>
++<script src="./js/finance.js"></script>
++</body>
++</html>
+Index: src/main/resources/bao/xy/dao/FinanceMapper.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/bao/xy/dao/FinanceMapper.xml	(date 1601884560508)
++++ src/main/resources/bao/xy/dao/FinanceMapper.xml	(date 1601884560508)
+@@ -0,0 +1,37 @@
++<?xml version="1.0" encoding="UTF-8" ?>
++<!DOCTYPE mapper
++        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
++        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
++<mapper namespace="bao.xy.dao.FinanceMapper">
++
++    <insert id="add" keyProperty="finance.id" useGeneratedKeys="true">
++        INSERT INTO finance (staff_id, proof, entry_date, state)
++        VALUES (#{finance.staffId}, #{finance.proof}, #{finance.entryDate}, #{finance.state})
++    </insert>
++
++    <select id="paging" resultMap="financeMap">
++        select * from finance t1 <include refid="whereSql"></include>
++    </select>
++
++    <select id="listCount" resultType="java.lang.Integer">
++        select count(*) from finance <include refid="whereSql"></include>
++    </select>
++
++    <resultMap id="financeMap" type="bao.xy.model.Finance">
++        <result column="staff_id" property="staffId"></result>
++        <result column="entry_date" property="entryDate"></result>
++    </resultMap>
++
++    <sql id="whereSql">
++        <where>
++            <if test="proof != null and proof != ''">
++                AND t1.proof LIKE CONCAT('%', #{proof}, '%')
++            </if>
++            <if test="state != null and state != ''">
++                AND t1.state LIKE CONCAT('%', #{state}, '%')
++            </if>
++        </where>
++    </sql>
++
++
++</mapper>
+\ No newline at end of file
+Index: src/main/resources/db.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/db.properties	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/resources/db.properties	(date 1601822486690)
+@@ -5,7 +5,8 @@
+ # 	username		: 用户名
+ # 	password		: 密码
+ jdbc.mysql.driverClassName=com.mysql.cj.jdbc.Driver
+-jdbc.mysql.url=jdbc:mysql://127.0.0.1:3306/asset_ms?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
++jdbc.mysql.url=jdbc:mysql://118.31.43.132:18265/asset_ms?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
++jdbc.mysql.myurl=jdbc:mysql://127.0.0.1:3306/asset_ms?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
+ jdbc.mysql.username=bao
+ jdbc.mysql.password=123456
+ 
+Index: src/main/webapp/js/finance.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/js/finance.js	(date 1601887482292)
++++ src/main/webapp/js/finance.js	(date 1601887482292)
+@@ -0,0 +1,144 @@
++var app = new Vue({
++    el : '#box',
++    data : {
++    	xPage : xPage,
++        // 添加业务
++		a1 : 0,
++		a2 : 0,
++		a3 : 0,
++		proof : '',
++		state : '',
++		
++		// 更改业务
++		u1 : 0,
++		upid : '',
++		upstate : ''
++	},
++    methods: {
++        addMod: function () {
++			if (xPage.work == 1) {
++				$("#addform")[0].reset();
++				$("#addfina").modal(
++				    {
++				        keyboard:false,
++				        backdrop:"static"
++				    }
++				);
++			} else {
++				layer.alert("不是管理员无法操作");
++			}
++        },
++		form : function() {
++			$.ajax({
++				url : "/finance.ajax",
++				type : "POST",
++				data : {
++					str: 'form',
++				},
++				dataType : "JSON",
++				success : function (code) {
++					app.proof = code.code;
++				},
++				error : function () {
++					layer.alert("生成失败，请联系管理员");
++				}
++			});
++		},
++		submit : function () {
++			// 判断是否成凭证号
++            if (this.proof == '请生成凭证号') {
++				$("#prof").html("<strong style=\"color: red\">请生成一个凭证号</strong>");
++                this.a1 = 0;
++			} else {
++				$("#inputWork").html('');
++				this.a1 = 1;
++			}
++			if (this.state == '') {
++				$("#sta").html("<strong style=\"color: red\">请选择</strong>");
++				this.a2 = 0;
++			} else {
++				$("#sta").html('');
++				this.a2 = 1;
++			}
++			if(this.a1 + this.a2 != 2) {
++				alert("请正确完成流程");
++			} else {
++				$("#addfina").modal('hide');
++				$.ajax({
++				    url : "/finance.ajax",
++				    type : "POST",
++				    data : {
++				        str: "add",
++						proof: this.proof,
++						state: this.state
++				    },
++				    dataType : "JSON",
++				    success : function (code) {
++                        console.log(code.code);
++				        if (code.code == "addSuc") {
++				            layer.alert("添加成功");
++							xPage.getData(xPage.pageIndex);
++				        } else if(code.code == "addErr") {
++							layer.alert("添加失败");
++				        }
++				    },
++				    error : function () {
++						layer.alert("添加失败，请联系管理员");
++				    }
++				});
++			}
++		},
++		updt : function(li) {
++			if (xPage.work == 1) {
++				this.upid = li.id;
++				this.upstate = li.state;
++				$("#updtfina").modal(
++					{
++						keyboard:false,
++						backdrop:"static"
++					}
++				);
++			} else {
++				layer.alert("不是管理员无法操作");
++			}
++		},
++		submit1 : function () {
++			// 判断是否选择职位
++			if (this.upstate == '') {
++				$("#upsta").html("<strong style=\"color: red\">请选择</strong>");
++			    this.u1 = 0;
++			} else {
++				$("#upsta").html('');
++				this.u1 = 1;
++			}
++			if(this.u1 != 1) {
++				alert("请将信息填写正确");
++			} else {
++				$("#updtfina").modal('hide');
++				$.ajax({
++				    url : "/finance.ajax",
++				    type : "POST",
++				    data : {
++				        str: 'updt',
++						id : this.upid,
++						state: this.upstate
++				    },
++				    dataType : "JSON",
++				    success : function (code) {
++			            console.log(code.code);
++				        if (code.code == "uptSuc") {
++				            layer.alert("修改成功");
++							xPage.getData(xPage.pageIndex);
++				        } else if(code.code == "uptErr") {
++							layer.alert("修改失败");
++				        }
++				    },
++				    error : function () {
++						layer.alert("添加失败，请联系管理员");
++				    }
++				});
++			}
++		}
++	}
++});
++xPage.init("/finance.ajax", "保管员");
+\ No newline at end of file
+Index: src/main/java/bao/xy/controller/AccountController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/controller/AccountController.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/controller/AccountController.java	(date 1601887321878)
+@@ -3,10 +3,7 @@
+ import bao.xy.model.*;
+ import bao.xy.service.*;
+ import bao.xy.service.Impl.LoginServiceImpl;
+-import bao.xy.utils.SpringUtils;
+-import bao.xy.utils.StringUtil;
+-import bao.xy.utils.TableData;
+-import bao.xy.utils.WebUtil;
++import bao.xy.utils.*;
+ import com.alibaba.fastjson.JSONObject;
+ import org.springframework.stereotype.Controller;
+ import org.springframework.web.bind.annotation.RequestMapping;
+@@ -16,7 +13,9 @@
+ import javax.servlet.http.HttpServletRequest;
+ import javax.servlet.http.HttpServletResponse;
+ import java.io.IOException;
++import java.text.SimpleDateFormat;
+ import java.util.ArrayList;
++import java.util.Date;
+ import java.util.List;
+ 
+ /**
+@@ -115,33 +114,35 @@
+ 
+     @RequestMapping("/staff.ajax")
+     @ResponseBody
+-    public String staff(HttpServletRequest request, String str, Integer index, Staff staff) {
++    public String staff(HttpServletRequest request, String str, PageDate pd, Staff staff) {
+ 
+         //一页有多少条数据
+-        TableData<Staff> td = new TableData<>();
++        TableData<Staff> td = new TableData<>(pd);
+ 
+         String code = "";
+ 
+         if ("paging".equals(str)) {
+-            td = staffService.paging(index, staff.getWork(), staff.getName(), staff.getUname());
++            td = staffService.paging(pd);
++            code = jdbcService.isOrNot("管理员", "adm");
++        }
++
++        List<Integer> idList = new ArrayList<>();
++        if (staff.getId() != null && staff.getId().length() > 2) {
++            idList = jdbcService.idList(staff.getId());
+         }
+ 
+         // 调用的删除业务
+         if ("del".equals(str)) {
+-            List<Integer> idList = jdbcService.idList(staff.getId());
+-            code = jdbcService.delIds("Staff", idList);
+-        }
+-
+-        if ("exist".equals(str)) {
+-            code = jdbcService.isOrNot("管理员", "adm");
++            code = jdbcService.delIds("staff", idList);
+         }
+ 
+         if ("empower".equals(str)) {
+-            code = staffService.updp(staff.getId(), "已解锁");
++
++            code = staffService.updp(idList, "已解锁");
+         }
+ 
+         if ("revoke".equals(str)) {
+-            code = staffService.updp(staff.getId(), "已锁定");
++            code = staffService.updp(idList, "已锁定");
+             if (code.equals("myself")) {
+                 request.getSession().setAttribute("user", null);
+             }
+@@ -167,14 +168,15 @@
+     // 资产
+     @RequestMapping("/assets.ajax")
+     @ResponseBody
+-    public String asset(HttpServletRequest request, Integer index, String str, String ffid, String fpid, Asset asset) {
+-        TableData<Asset> td = new TableData<>();
++    public String asset(PageDate pd, String str, String ffid, String fpid, Asset asset) {
++        TableData<Asset> td = new TableData<>(pd);
+         // 状态码
+         String code = "";
+ 
+         // 员工业务对象
+         if ("paging".equals(str)) {
+-            td = assetService.paging(index, asset.getAssetClass(), asset.getState());
++            td = assetService.paging(pd);
++            code = jdbcService.isOrNot("保管员", "kep");
+         }
+ 
+         // 删除
+@@ -183,17 +185,12 @@
+             code = jdbcService.delIds("assets", idList);
+         }
+ 
+-//        // 调用新增业务
++        // 调用新增业务
+         if ("add".equals(str)) {
+             asset.setCareStaffId(LoginServiceImpl.id);
+             code = assetService.add(asset);
+         }
+ 
+-        // 验证是否为保管员
+-        if ("exist".equals(str)) {
+-            code = jdbcService.isOrNot("保管员", "kep");
+-        }
+-
+         // 验证财务id
+         if ("ffid".equals(str)) {
+             code = assetService.ffid(ffid, asset.getId());
+@@ -211,6 +208,50 @@
+             code = assetService.updt(asset);
+         }
+ 
++        td.setCode(code);
++        return WebUtil.returnJsonTd(td);
++    }
++
++    @Resource
++    private FinanceService financeService;
++    @RequestMapping("/finance.ajax")
++    @ResponseBody
++    public String finance (PageDate pd, String str, Finance finance) {
++        TableData<Finance> td = new TableData<>(pd);
++
++        String code = "";
++
++        if ("paging".equals(str)) {
++            td = financeService.paging(pd);
++            code = jdbcService.isOrNot("保管员", "kep");
++        }
++
++        // 删除
++        if ("del".equals(str)) {
++            List<Integer> idList = jdbcService.idList(finance.getId());
++            code = jdbcService.delIds("finance", idList);
++        }
++
++        Date date = new Date();
++
++        // 生成凭证号
++        if ("form".equals(str)) {
++            SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMddHHmmss");
++            code = sdf.format(date);
++        }
++
++        // 新增
++        if ("add".equals(str)) {
++            finance.setStaffId(LoginServiceImpl.id);
++            finance.setEntryDate(DateUtils.Date());
++            code = financeService.add(finance);
++        }
++
++        // 修改
++        if ("updt".equals(str)) {
++            code = financeService.updt(finance);
++        }
++
+         td.setCode(code);
+         return WebUtil.returnJsonTd(td);
+     }
+Index: src/main/java/bao/xy/service/Impl/FinanceServiceImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/Impl/FinanceServiceImpl.java	(date 1601887321888)
++++ src/main/java/bao/xy/service/Impl/FinanceServiceImpl.java	(date 1601887321888)
+@@ -0,0 +1,89 @@
++package bao.xy.service.Impl;
++
++import bao.xy.dao.FinanceMapper;
++import bao.xy.model.Finance;
++import bao.xy.service.FinanceService;
++import bao.xy.service.JdbcService;
++import bao.xy.utils.PageDate;
++import bao.xy.utils.PageUtils;
++import bao.xy.utils.TableData;
++import com.alibaba.fastjson.JSONObject;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++
++import javax.annotation.Resource;
++import java.util.List;
++
++/**
++ * @Description:
++ * @CreateTime: 2020-10-05-13-06
++ */
++@Service
++public class FinanceServiceImpl implements FinanceService {
++
++    @Resource
++    private FinanceMapper mapper;
++
++    @Resource
++    private JdbcService jdbcService;
++
++    /**
++     * 分页
++     *
++     * @param pd 搜索数据
++     * @return td
++     */
++    @Override
++    @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
++    public TableData<Finance> paging(PageDate pd) {
++        TableData td = new TableData(pd);
++        String proof = null;
++        String state = null;
++        JSONObject sd = pd.getScoutData();
++        if (sd != null) {
++            proof = sd.getString("proof");
++            state = sd.getString("state");
++        }
++        Integer count = mapper.listCount(proof, state);
++        td.setDataCount(count);
++        if (count <= 0) {
++            return td;
++        }
++
++        List<Finance> list = mapper.paging(PageUtils.getRowBounds(pd.getPageIndex(), pd.getPageSize()), proof, state);
++        td.setDataList(list);
++        return td;
++    }
++
++    /**
++     * 添加财务信息
++     * @param finance
++     * @return string
++     */
++    @Override
++    @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
++    public String add(Finance finance) {
++        Integer add = mapper.add(finance);
++        if (add > 0) {
++            return "addSuc";
++        } else {
++            return "addErr";
++        }
++
++    }
++
++    /**
++     * 修改财产状态
++     * @param finance
++     * @return string
++     */
++    public String updt(Finance finance) {
++        boolean updt = jdbcService.updt(1, "finance", "state", finance.getState(), "id", finance.getId());
++        if (updt) {
++            // 成功
++            return "uptSuc";
++        }
++        // 失败
++        return "uptErr";
++    }
++}
+Index: src/main/java/bao/xy/service/FinanceService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/FinanceService.java	(date 1601887274924)
++++ src/main/java/bao/xy/service/FinanceService.java	(date 1601887274924)
+@@ -0,0 +1,33 @@
++package bao.xy.service;
++
++import bao.xy.model.Finance;
++import bao.xy.utils.PageDate;
++import bao.xy.utils.TableData;
++
++/**
++ * @Description:
++ * @CreateTime: 2020-10-05-13-05
++ */
++public interface FinanceService {
++    /**
++     * 分页
++     *
++     * @param pd 搜索数据
++     * @return td
++     */
++    TableData<Finance> paging(PageDate pd);
++
++    /**
++     * 添加财务信息
++     * @param finance
++     * @return string
++     */
++    String add(Finance finance);
++
++    /**
++     * 修改财产状态
++     * @param finance
++     * @return
++     */
++    String updt(Finance finance);
++}
+Index: src/main/java/bao/xy/utils/DateUtils.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/utils/DateUtils.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/utils/DateUtils.java	(date 1601883802156)
+@@ -10,10 +10,8 @@
+ public class DateUtils {
+ 
+     public static String Date() {
+-        Date date = new Date();
+-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+-        String dat = sdf.format(date);
+-        return dat;
++        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
++        return date;
+     }
+ 
+ 
+Index: src/main/java/bao/xy/dao/FinanceMapper.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/dao/FinanceMapper.java	(date 1601884301898)
++++ src/main/java/bao/xy/dao/FinanceMapper.java	(date 1601884301898)
+@@ -0,0 +1,21 @@
++package bao.xy.dao;
++
++import bao.xy.model.Asset;
++import bao.xy.model.Finance;
++import org.apache.ibatis.annotations.Param;
++import org.apache.ibatis.session.RowBounds;
++
++import java.util.List;
++
++/**
++ * @Description:
++ * @CreateTime: 2020-10-05-13-07
++ */
++public interface FinanceMapper {
++
++    List<Finance> paging(RowBounds rb, @Param("proof") String proof, @Param("state") String state);
++
++    Integer listCount(@Param("proof") String proof, @Param("state") String state);
++
++    Integer add(@Param("finance") Finance finance);
++}
+Index: src/main/webapp/js/assets.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/js/assets.js	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/webapp/js/assets.js	(date 1601822915831)
+@@ -2,23 +2,9 @@
+ var app = new Vue({
+     el : '#box',
+     data : {
+-		page : {
+-			index : 1,
+-			max : 0,
+-			pager : []
+-		},
+-        list: [],
+-        pageList: [],
+-        url: '',
++    	xPage: xPage,
+ 		allclass : ['食品','工具','器械'],
+ 		allstate : ['可用', '使用中', '报废'],
+-		e1 : 0,
+-		sd:{
+-			assetClass : '',
+-			state : '',
+-		},
+-		allId : '',
+-		ids : [],
+ 
+         // 添加业务
+ 		a1 : 0,
+@@ -41,115 +27,6 @@
+ 		upstates : ''
+ 	},
+     methods: {
+-    	all: function() {
+-    		if (this.allid) {
+-    			for (var i = 0; i < this.list.length; i++) {
+-    				this.ids.push(this.list[i].id);
+-				}
+-			} else {
+-    			this.ids = [];
+-			}
+-		},
+-        nextPage: function () {
+-            if (this.page.index < this.page.max) {
+-            	this.page.index = this.page.index + 1;
+-            	this.getData(this.page.index);
+-			}
+-        },
+-        upPage: function () {
+-            if (this.page.index > 1) {
+-            	this.page.index = this.page.index - 1;
+-            	this.getData(this.page.index);
+-            }
+-        },
+-		runPage : function(max) {
+-			this.page.max = max;
+-			app.page.pager = [];
+-			for (var i = 1; i <= max; i++) {
+-				app.page.pager.push(i);
+-			}
+-		},
+-        getData: function(indexPage) {
+-            $.ajax({
+-                url : "/assets.ajax",
+-                type : "POST",
+-                data : {
+-					str : 'paging',
+-                    index : indexPage,
+-					assetClass : this.sd.assetClass,
+-					state : this.sd.state
+-                },
+-                dataType : "JSON",
+-                success : function (data) {
+-					app.page.index = indexPage;
+-					app.list = data.dataList;
+-					app.runPage(data.pageCount);
+-                },
+-                error : function () {
+-                    alert("翻页失败，请联系管理员");
+-                }
+-            });
+-        },
+-		delmore : function() {
+-    		if (this.ids.length <= 0) {
+-    			alert("请选择要删除的数据");
+-			} else {
+-    			var idstr = this.ids.join(",");
+-    			this.del(idstr);
+-			}
+-		},
+-        del: function (ids) {
+-			if (app.e1 == 1) {
+-				if (confirm("是否要删除?")) {
+-					$.ajax({
+-						url : "/assets.ajax",
+-						type : "POST",
+-						data : {
+-							id : ids,
+-							str: 'del'
+-						},
+-						dataType : "JSON",
+-						success : function (code) {
+-							console.log(code.code);
+-							if (code.code == "delSuc") {
+-								alert("删除成功");
+-								app.getData(app.page.index);
+-							} else if (code.code == "delErr") {
+-								alert("删除失败");
+-							}
+-						},
+-						error : function () {
+-							alert("删除失败，请联系管理员");
+-						}
+-					});
+-				} else {
+-					alert("已取消删除");
+-				}
+-			} else {
+-				alert("不是保管员无法操作！");
+-			}
+-        },
+-		exist: function () {
+-			$.ajax({
+-				url : "/assets.ajax",
+-				type : "POST",
+-				data : {
+-					str: 'exist',
+-				},
+-				dataType : "JSON",
+-				success : function (code) {
+-					if (code.code == "notkep") {
+-							app.e1 = 0;
+-					}
+-					if (code.code == "iskep") {
+-							app.e1 = 1;
+-					}
+-				},
+-				error : function () {
+-					alert("验证失败，请联系管理员");
+-				}
+-			});
+-		},
+ 		findfid : function () {
+ 			if (this.financialId == '') {
+ 				$(".inputfid").html("<strong style=\"color: red\">请输入财务编号</strong>");
+@@ -219,7 +96,7 @@
+ 			}
+ 		},
+ 		addMod: function () {
+-			if (app.e1 == 1) {
++			if (xPage.work == 1) {
+ 				$("#addform")[0].reset();
+ 				$("#addasset").modal(
+ 				    {
+@@ -265,7 +142,7 @@
+                         console.log(code.code);
+ 				        if (code.code == "addSuc") {
+ 				            alert("添加成功");
+-							app.getData(app.page.index);
++							xPage.getData(xPage.pageIndex);
+ 				        } else if(code.code == "addErr") {
+ 				            alert("添加失败");
+ 				        }
+@@ -277,7 +154,7 @@
+ 			}
+ 		},
+ 		updt : function(li) {
+-			if (app.e1 == 1) {
++			if (xPage.work == 1) {
+ 				this.upid = li.id;
+ 				this.upassetClass = li.assetClass;
+ 				this.financialId = li.financeId;
+@@ -330,7 +207,7 @@
+ 						console.log(code.code);
+ 						if (code.code == "updtSuc") {
+ 							alert("修改成功");
+-							app.getData(app.page.index);
++							xPage.getData(xPage.pageIndex);
+ 						} else if(code.code == "updtErr") {
+ 							alert("修改失败");
+ 						}
+@@ -343,5 +220,4 @@
+ 		}
+ 	}
+ });
+-app.getData(1);
+-app.exist();
+\ No newline at end of file
++xPage.init("/assets.ajax", "保管员")
+\ No newline at end of file
+Index: src/main/java/bao/xy/service/Impl/AssetServiceImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/Impl/AssetServiceImpl.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/service/Impl/AssetServiceImpl.java	(date 1601878836482)
+@@ -4,8 +4,10 @@
+ import bao.xy.model.Asset;
+ import bao.xy.service.AssetService;
+ import bao.xy.service.JdbcService;
++import bao.xy.utils.PageDate;
+ import bao.xy.utils.PageUtils;
+ import bao.xy.utils.TableData;
++import com.alibaba.fastjson.JSONObject;
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.stereotype.Service;
+ 
+@@ -16,12 +18,9 @@
+  * @Description:
+  * @CreateTime: 2020-09-05-13-40
+  */
+-@Service("assetService")
++@Service
+ public class AssetServiceImpl implements AssetService {
+ 
+-    @Value("${size}")
+-    private int size;
+-
+     @Resource
+     private AssetsMapper mapper;
+ 
+@@ -33,23 +32,25 @@
+     /**
+      * 分页
+      *
+-     * @param index 页数
+-     * @param assetClass 资产类别
+-     * @param state 资产状态
++     * @param pd 搜索数据
+      * @return data
+      */
+-    public TableData<Asset> paging(Integer index, String assetClass, String state) {
+-        TableData td = new TableData();
+-        td.setPageSize(size);
+-        td.setPageIndex(index);
++    public TableData<Asset> paging(PageDate pd) {
++        TableData td = new TableData(pd);
++        String assetClass = null;
++        String state = null;
++        JSONObject sd = pd.getScoutData();
++        if (sd != null) {
++            assetClass = sd.getString("assetClass");
++            state = sd.getString("state");
++        }
+         Integer count = mapper.listCount(assetClass, state);
+         td.setDataCount(count);
+-        td.setPageCount(PageUtils.getLastPage(count, size));
+-        if (count < 0) {
++        if (count <= 0) {
+             return td;
+         }
+ 
+-        List<Asset> list = mapper.paging(PageUtils.getRowBounds(index, size), assetClass, state);
++        List<Asset> list = mapper.paging(PageUtils.getRowBounds(pd.getPageIndex(), pd.getPageSize()), assetClass, state);
+         td.setDataList(list);
+         return td;
+     }
+Index: src/main/webapp/js/current.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/js/current.js	(date 1601819618942)
++++ src/main/webapp/js/current.js	(date 1601819618942)
+@@ -0,0 +1,146 @@
++var xPage = {
++    // 地址
++    url : '',
++    // 分页索引
++    pageIndex : 1,
++    // 数据数量
++    pageSize : 5,
++    // 数据最大页数
++    pageMax : 1,
++    // 数据数量
++    dataCount : 0,
++    // 分页序号
++    pageList : [],
++    // 搜索数据
++    sd : {},
++    // 分页数据
++    dataList : [],
++    // 获取职位
++    ynWork : '',
++    work : 0,
++    // 多个id
++    allId : '',
++    ids : [],
++    // 下一页操作
++    nextPage: function () {
++        if (xPage.pageIndex < xPage.pageMax) {
++            xPage.pageIndex = xPage.pageIndex + 1;
++            xPage.getData(xPage.pageIndex);
++        }
++    },
++    // 上一页操作
++    upPage: function () {
++        if (xPage.pageIndex > 1) {
++            xPage.pageIndex = xPage.pageIndex - 1;
++            xPage.getData(xPage.pageIndex);
++        }
++    },
++    // 序号遍历
++    runPage : function(max) {
++        xPage.pageMax = max;
++        xPage.pageList = [];
++        for (var i = 1; i <= max; i++) {
++            xPage.pageList.push(i);
++        }
++    },
++    // 获取数据属性
++    getData: function (indexPage) {
++        $.ajax({
++            url : xPage.url,
++            type : "POST",
++            data : {
++                pageIndex : indexPage,
++                pageSize : xPage.pageSize,
++                scoutData : JSON.stringify(xPage.sd),
++                str : 'paging'
++            },
++            dataType : "JSON",
++            success : function (data) {
++                xPage.pageIndex = indexPage;
++                xPage.dataList = data.dataList;
++                xPage.dataCount = data.dataCount;
++                xPage.runPage(data.pageCount);
++                if (xPage.ynWork == "管理员") {
++                    if (data.code == "notadm") {
++                        xPage.work = 0;
++                    }
++                    if (data.code == "isadm") {
++                        xPage.work = 1;
++                    }
++                }
++                if (xPage.ynWork == "保管员") {
++                    if (data.code == "notkep") {
++                        xPage.work = 0;
++                    }
++                    if (data.code == "iskep") {
++                        xPage.work = 1;
++                    }
++                }
++            },
++            error : function () {
++                layer.alert("翻页失败，请联系管理员");
++            }
++        });
++    },
++    init : function (url, work) {
++        xPage.url = url;
++        xPage.ynWork = work;
++        xPage.getData(xPage.pageIndex);
++
++    },
++    // 全选
++    all : function() {
++        if (xPage.allId) {
++            for (var i = 0; i < xPage.dataList.length; i++) {
++                if (xPage.dataList[i].id != 1) {
++                    xPage.ids.push(xPage.dataList[i].id);
++                }
++            }
++        } else {
++            this.ids = [];
++        }
++    },
++
++    delmore: function () {
++        if (xPage.ids.length <= 0 ) {
++            layer.alert("请选择要删除的数据");
++        } else {
++            var idstr = xPage.ids.join(",");
++            xPage.del(idstr);
++        }
++    },
++    del: function (ids) {
++        if (xPage.work == 1) {
++            layer.confirm('是否要删除？', {
++                btn: ['确定','取消'] //按钮
++            }, function(){
++                $.ajax({
++                    url : xPage.url,
++                    type : "POST",
++                    data : {
++                        id : ids,
++                        str: 'del'
++                    },
++                    dataType : "JSON",
++                    success : function (code) {
++                        console.log(code.code);
++                        if (code.code == "delSuc") {
++                            layer.alert("删除成功");
++                            xPage.ids = [];
++                            xPage.getData(xPage.pageIndex);
++                        } else if (code.code == "delErr") {
++                            layer.alert("删除失败");
++                        }
++                    },
++                    error : function () {
++                        layer.alert("删除失败，请联系管理员");
++                    }
++                });
++            }, function(){
++                layer.msg('已取消删除', {icon: 1});
++            });
++        } else {
++            layer.alert("无法操作");
++        }
++    },
++}
+\ No newline at end of file
+Index: src/main/java/bao/xy/service/AssetService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/service/AssetService.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/service/AssetService.java	(date 1601789020878)
+@@ -1,6 +1,7 @@
+ package bao.xy.service;
+ 
+ import bao.xy.model.Asset;
++import bao.xy.utils.PageDate;
+ import bao.xy.utils.TableData;
+ 
+ import java.util.List;
+@@ -12,14 +13,11 @@
+ public interface AssetService {
+ 
+     /**
+-     * 分页
+      *
+-             * @param index 页数
+-     * @param assetClass 资产类别
+-     * @param state 资产状态
+-     * @return data
++     * @param pd
++     * @return
+      */
+-    TableData<Asset> paging(Integer index, String assetClass, String state);
++    TableData<Asset> paging(PageDate pd);
+ 
+     /**
+      * 查找财务id
+Index: src/main/webapp/staff.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/staff.html	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/webapp/staff.html	(date 1601881315041)
+@@ -7,7 +7,7 @@
+     <title>员工名单</title>
+ 
+     <link href="./plug-ins/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+-    <link href="./css/staff.css" rel="stylesheet">
++    <link href="./css/current.css" rel="stylesheet">
+     <style>
+         .lh>tbody>tr>td {
+             line-height: 33px;
+@@ -25,14 +25,14 @@
+                 <div class="form-group">
+                     <div class="input-group">
+                         <div class="input-group-addon">职位</div>
+-                        <input type="text" class="form-control" placeholder="请输入职位" v-model="sd.work">
++                        <input type="text" class="form-control" placeholder="请输入职位" v-model="xPage.sd.work">
+                         <div class="input-group-addon">姓名</div>
+-                        <input type="text" class="form-control" placeholder="请输入姓名" v-model="sd.name">
++                        <input type="text" class="form-control" placeholder="请输入姓名" v-model="xPage.sd.name">
+                         <div class="input-group-addon">用户名</div>
+-                        <input type="text" class="form-control" placeholder="请输入用户名" v-model="sd.uname">
++                        <input type="text" class="form-control" placeholder="请输入用户名" v-model="xPage.sd.uname">
+                     </div>
+                 </div>
+-                <button type="button" class="btn btn-primary" @click="getData(1)">
++                <button type="button" class="btn btn-primary" @click="xPage.getData(1)">
+                     <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                     搜索
+                 </button>
+@@ -42,13 +42,21 @@
+         <div class="panel-body">
+             <div class="form-inline">
+                 <div class="form-group">
+-                    <button type="button" class="btn btn-danger" @click="delmore">
++                    <button type="button" class="btn btn-success" @click="addMod()">
++                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
++                        添加
++                    </button>
++                    <button type="button" class="btn btn-danger" @click="xPage.delmore()">
+                         <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                         删除
+                     </button>
+-                    <button type="button" class="btn btn-success" @click="addMod">
++                    <button type="button" class="btn btn-success" @click="emMore()">
+                         <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+-                        添加
++                        解锁
++                    </button>
++                    <button type="button" class="btn btn-warning" @click="reMore()">
++                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
++                        锁定
+                     </button>
+                 </div><br>
+             </div>
+@@ -58,7 +66,7 @@
+         <table class="table table-hover table-bordered lh" >
+             <tr>
+                 <th>
+-                    <input type="checkbox" v-model="allId" @change="all()"> 全选
++                    <input type="checkbox" v-model="xPage.allId" @change="xPage.all()"> 全选
+                 </th>
+                 <th>员工编号</th>
+                 <th>职位</th>
+@@ -71,10 +79,10 @@
+                 <th>电话</th>
+                 <th>操作</th>
+             </tr>
+-            <tr v-for="li in list">
++            <tr v-for="li in xPage.dataList">
+                 <td>
+-                    <input type="checkbox" :value="li.id" v-model="ids" v-if="li.id != 1">
+-                    <input type="checkbox" :value="li.id" v-model="ids" v-if="li.id == 1" disabled>
++                    <input type="checkbox" :value="li.id" v-model="xPage.ids" v-if="li.id != 1">
++                    <input type="checkbox" :value="li.id" v-model="xPage.ids" v-if="li.id == 1" disabled>
+                 </td>
+                 <td>{{li.id}}</td>
+                 <td>{{li.work}}</td>
+@@ -87,7 +95,7 @@
+                 <td>{{li.phone}}</td>
+                 <td>
+                     <div class="btn-group  btn-group-xs" role="group">
+-                        <button type="button" class="btn btn-danger" @click="del(li.id)" v-if="li.id != 1">
++                        <button type="button" class="btn btn-danger" @click="xPage.del(li.id)" v-if="li.id != 1">
+                             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                             删除
+                         </button>
+@@ -107,22 +115,26 @@
+                 </td>
+             </tr>
+         </table>
+-        <div class="myNav">
+-            <nav aria-label="Page navigation" class="text-right">
++        <div class="myNav navbar-fixed-bottom">
++            <nav aria-label="Page navigation" class="text-center">
+                 <ul class="pagination">
+-                    <li>
+-                        <a @click="upPage()" aria-label="Previous">
++                    <li :class="{disabled: (xPage.pageIndex == 1)}" >
++                        <a @click="xPage.upPage()" aria-label="Previous">
+                             <span aria-hidden="true">&laquo;</span>
+                         </a>
+                     </li>
+-                    <li v-for="page in page.pager">
+-                        <a @click="getData(page)">{{page}}</a>
++                    <li v-for="page in xPage.pageList" :class="{disabled: (xPage.pageIndex == page)}" >
++                        <a @click="xPage.getData(page)" >{{page}}</a>
+                     </li>
+-                    <li>
+-                        <a @click="nextPage()" aria-label="Next">
++                    <li :class="{disabled: (xPage.pageIndex == xPage.pageMax)}" >
++                        <a @click="xPage.nextPage()" aria-label="Next">
+                             <span aria-hidden="true">&raquo;</span>
+                         </a>
+                     </li>
++                    <li class="pager-label" style="line-height: 34px">
++                         &nbsp;第 <input type="text" v-model="xPage.pageIndex" style="width: 25px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
++                        每页 <input type="number" min="1" max="10" v-model="xPage.pageSize" style="width: 43px; height: 25px;" onchange="xPage.getData(1)"> 条数据 共{{xPage.dataCount}}项
++                    </li>
+                 </ul>
+             </nav>
+         </div>
+@@ -302,6 +314,7 @@
+ <script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+ <script src="./plug-ins/layer/layer.js"></script>
+ <script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
++<script src="js/current.js"></script>
+ <script src="./js/staff.js"></script>
+ </body>
+ </html>
+Index: src/main/webapp/assets.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/assets.html	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/webapp/assets.html	(date 1601881483283)
+@@ -7,7 +7,7 @@
+     <title>资产列表</title>
+ 
+     <link href="./plug-ins/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+-    <link href="./css/assets.css" rel="stylesheet">
++    <link href="css/current.css" rel="stylesheet">
+     <style>
+         .lh>tbody>tr>td {
+             line-height: 33px;
+@@ -19,25 +19,32 @@
+ <body>
+ <div id="box">
+     <div class="panel panel-default">
+-        <div class="form-inline">
+-            <div class="form-group">
+-                <div class="input-group">
+-                    <div class="input-group-addon">资产类别</div>
+-                    <input type="text" class="form-control" placeholder="请输入资产类别" v-model="sd.assetClass">
+-                    <div class="input-group-addon">资产状态</div>
+-                    <input type="text" class="form-control" placeholder="请输入资产状态" v-model="sd.state">
+-                </div>
+-            </div>
+-            <button type="button" class="btn btn-primary" @click="getData(1)">
+-                <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+-                搜索
+-            </button>
++        <div class="panel-heading">资产搜索界面</div>
++        <div class="panel-body">
++            <div class="form-inline">
++                <div class="form-group">
++                    <div class="input-group">
++                        <div class="input-group-addon">资产类别</div>
++                        <input type="text" class="form-control" placeholder="请输入资产类别" v-model="xPage.sd.assetClass">
++                        <div class="input-group-addon">资产状态</div>
++                        <input type="text" class="form-control" placeholder="请输入资产状态" v-model="xPage.sd.state">
++                    </div>
++                </div>
++                <button type="button" class="btn btn-primary" @click="xPage.getData(1)">
++                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
++                    搜索
++                </button>
++            </div>
+         </div>
+-        <div class="panel-heading">资产数据操作界面</div>
++        <div class="panel-heading">资产操作界面</div>
+         <div class="panel-body">
+-            <button type="button" class="btn btn-default" @click="addMod">
++            <button type="button" class="btn btn-success" @click="addMod">
+                 <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                 添加
++            </button>
++            <button type="button" class="btn btn-danger" @click="xPage.delmore()">
++                <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
++                删除
+             </button>
+         </div>
+     </div>
+@@ -45,7 +52,7 @@
+         <table class="table table-hover table-bordered lh" >
+             <tr>
+                 <th>
+-                    <input type="checkbox" v-model="allId" @change="all()"> 全选
++                    <input type="checkbox" v-model="xPage.allId" @change="xPage.all()"> 全选
+                 </th>
+                 <th>编号</th>
+                 <th>分类</th>
+@@ -55,9 +62,9 @@
+                 <th>状态</th>
+                 <th>操作</th>
+             </tr>
+-            <tr v-for="li in list">
++            <tr v-for="li in xPage.dataList">
+                 <td>
+-                    <input type="checkbox" :value="li.id" v-model="ids" v-if="li.id != 1">
++                    <input type="checkbox" :value="li.id" v-model="xPage.ids" v-if="li.id != 1">
+                 </td>
+                 <td>{{li.id}}</td>
+                 <td>{{li.assetClass}}</td>
+@@ -79,22 +86,26 @@
+                 </td>
+             </tr>
+         </table>
+-        <div class="myNav">
+-            <nav aria-label="Page navigation" class="text-right">
++        <div class="myNav navbar-fixed-bottom">
++            <nav aria-label="Page navigation" class="text-center">
+                 <ul class="pagination">
+-                    <li>
+-                        <a @click="upPage()" aria-label="Previous">
++                    <li :class="{disabled: (xPage.pageIndex == 1)}" >
++                        <a @click="xPage.upPage()" aria-label="Previous">
+                             <span aria-hidden="true">&laquo;</span>
+                         </a>
+                     </li>
+-                    <li v-for="page in page.pager">
+-                        <a @click="getData(page)">{{page}}</a>
++                    <li v-for="page in xPage.pageList" :class="{disabled: (xPage.pageIndex == page)}" >
++                        <a @click="xPage.getData(page)" >{{page}}</a>
+                     </li>
+-                    <li>
+-                        <a @click="nextPage()" aria-label="Next">
++                    <li :class="{disabled: (xPage.pageIndex == xPage.pageMax)}" >
++                        <a @click="xPage.nextPage()" aria-label="Next">
+                             <span aria-hidden="true">&raquo;</span>
+                         </a>
+                     </li>
++                    <li class="pager-label" style="line-height: 34px">
++                        &nbsp;第 <input type="text" v-model="xPage.pageIndex" style="width: 25px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
++                        每页 <input type="number" min="1" max="10" v-model="xPage.pageSize" style="width: 43px; height: 25px;" onchange="xPage.getData(1)"> 条数据 共{{xPage.dataCount}}项
++                    </li>
+                 </ul>
+             </nav>
+         </div>
+@@ -209,6 +220,7 @@
+ <script src="./plug-ins/jq/jquery.min.js"></script>
+ <script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+ <script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
++<script src="js/current.js"></script>
+ <script src="./js/assets.js"></script>
+ </body>
+ </html>
+Index: src/main/java/bao/xy/utils/PageDate.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/utils/PageDate.java	(date 1601796467513)
++++ src/main/java/bao/xy/utils/PageDate.java	(date 1601796467513)
+@@ -0,0 +1,75 @@
++package bao.xy.utils;
++
++import com.alibaba.fastjson.JSONObject;
++
++/**
++ * @Description:
++ * @CreateTime: 2020-10-04-11-57
++ */
++public class PageDate {
++
++    // 默认分页数
++    private final static Integer DEFAULT_PAGE_SIZE = 5;
++    // 页码
++    private Integer pageIndex;
++    // 分页数显
++    private Integer pageSize;
++    // 搜索数据
++    private String scoutData;
++
++    public PageDate() {
++    }
++
++    public PageDate(Integer pageIndex, Integer pageSize, String scoutData) {
++        this.pageIndex = pageIndex;
++        this.pageSize = pageSize;
++        this.scoutData = scoutData;
++    }
++
++    public Integer getPageIndex() {
++        if (this.pageIndex == null || this.pageIndex < 1) {
++            this.pageIndex = 1;
++        }
++        return pageIndex;
++    }
++
++    public void setPageIndex(Integer pageIndex) {
++        this.pageIndex = pageIndex;
++    }
++
++    public Integer getPageSize() {
++        if (this.pageSize == null || this.pageSize < 1) {
++            this.pageSize = DEFAULT_PAGE_SIZE;
++        }
++        return pageSize;
++    }
++
++    public void setPageSize(Integer pageSize) {
++        this.pageSize = pageSize;
++    }
++
++    public JSONObject getScoutData() {
++        if (StringUtil.isNotEmpty(this.scoutData)) {
++            try {
++                JSONObject parse = (JSONObject) JSONObject.parse(this.scoutData);
++                return parse;
++            } catch (Exception e) {
++                e.printStackTrace();
++            }
++        }
++        return null;
++    }
++
++    public void setScoutData(String scoutData) {
++        this.scoutData = scoutData;
++    }
++
++    @Override
++    public String toString() {
++        return "PageDate{" +
++                "pageIndex=" + pageIndex +
++                ", pageSize=" + pageSize +
++                ", scoutData='" + scoutData + '\'' +
++                '}';
++    }
++}
+Index: .idea/webServers.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/webServers.xml	(date 1601631604537)
++++ .idea/webServers.xml	(date 1601631604537)
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="WebServers">
++    <option name="servers">
++      <webServer id="772adfca-e037-4582-af4d-e39818987caf" name="118.31.43.132" url="http://118.31.43.132:8888">
++        <fileTransfer rootFolder="/data0/tamcat" accessType="SFTP" host="118.31.43.132" port="18263" sshConfigId="499f2f70-74cd-4d87-9123-312b22e04c59" sshConfig="root@118.31.43.132:18263 password">
++          <advancedOptions>
++            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
++          </advancedOptions>
++        </fileTransfer>
++      </webServer>
++    </option>
++  </component>
++</project>
+\ No newline at end of file
+Index: src/main/java/bao/xy/dao/StaffMapper.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/bao/xy/dao/StaffMapper.java	(revision 82a8f7d7505f02f4edba5c7202ce024eb8b577a5)
++++ src/main/java/bao/xy/dao/StaffMapper.java	(date 1601812506762)
+@@ -20,7 +20,7 @@
+ 
+     Integer add(@Param("staff") Staff staff);
+ 
+-    Integer updp(@Param("id") String id, @Param("powers") String powers);
++    Integer updp(@Param("ids") List<Integer> ids, @Param("powers") String powers);
+ 
+     Integer updt(@Param("staff") Staff staff);
+ 
+Index: .idea/sshConfigs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/sshConfigs.xml	(date 1601562031135)
++++ .idea/sshConfigs.xml	(date 1601562031135)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="SshConfigs">
++    <configs>
++      <sshConfig authType="PASSWORD" host="118.31.43.132" id="499f2f70-74cd-4d87-9123-312b22e04c59" port="18263" nameFormat="DESCRIPTIVE" username="root" />
++    </configs>
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/deployment.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/deployment.xml	(date 1601562031079)
++++ .idea/deployment.xml	(date 1601562031079)
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="PublishConfigData" serverName="118.31.43.132">
++    <serverData>
++      <paths name="118.31.43.132">
++        <serverdata>
++          <mappings>
++            <mapping local="$PROJECT_DIR$" web="/" />
++          </mappings>
++        </serverdata>
++      </paths>
++    </serverData>
++  </component>
++</project>
+\ No newline at end of file
+diff --git src/main/webapp/css/assets.css src/main/webapp/css/current.css
+rename from src/main/webapp/css/assets.css
+rename to src/main/webapp/css/current.css

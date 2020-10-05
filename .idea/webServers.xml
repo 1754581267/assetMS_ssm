@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="772adfca-e037-4582-af4d-e39818987caf" name="118.31.43.132" url="http://118.31.43.132:8888">
+        <fileTransfer rootFolder="/data0/tamcat" accessType="SFTP" host="118.31.43.132" port="18263" sshConfigId="499f2f70-74cd-4d87-9123-312b22e04c59" sshConfig="root@118.31.43.132:18263 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

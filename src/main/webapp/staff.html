@@ -7,7 +7,7 @@
     <title>员工名单</title>
 
     <link href="./plug-ins/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="./css/staff.css" rel="stylesheet">
+    <link href="./css/current.css" rel="stylesheet">
     <style>
         .lh>tbody>tr>td {
             line-height: 33px;
@@ -25,14 +25,14 @@
                 <div class="form-group">
                     <div class="input-group">
                         <div class="input-group-addon">职位</div>
-                        <input type="text" class="form-control" placeholder="请输入职位" v-model="sd.work">
+                        <input type="text" class="form-control" placeholder="请输入职位" v-model="xPage.sd.work">
                         <div class="input-group-addon">姓名</div>
-                        <input type="text" class="form-control" placeholder="请输入姓名" v-model="sd.name">
+                        <input type="text" class="form-control" placeholder="请输入姓名" v-model="xPage.sd.name">
                         <div class="input-group-addon">用户名</div>
-                        <input type="text" class="form-control" placeholder="请输入用户名" v-model="sd.uname">
+                        <input type="text" class="form-control" placeholder="请输入用户名" v-model="xPage.sd.uname">
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary" @click="getData(1)">
+                <button type="button" class="btn btn-primary" @click="xPage.getData(1)">
                     <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
                     搜索
                 </button>
@@ -42,13 +42,21 @@
         <div class="panel-body">
             <div class="form-inline">
                 <div class="form-group">
-                    <button type="button" class="btn btn-danger" @click="delmore">
+                    <button type="button" class="btn btn-success" @click="addMod()">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                        添加
+                    </button>
+                    <button type="button" class="btn btn-danger" @click="xPage.delmore()">
                         <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
                         删除
                     </button>
-                    <button type="button" class="btn btn-success" @click="addMod">
+                    <button type="button" class="btn btn-success" @click="emMore()">
                         <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                        添加
+                        解锁
+                    </button>
+                    <button type="button" class="btn btn-warning" @click="reMore()">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                        锁定
                     </button>
                 </div><br>
             </div>
@@ -58,7 +66,7 @@
         <table class="table table-hover table-bordered lh" >
             <tr>
                 <th>
-                    <input type="checkbox" v-model="allId" @change="all()"> 全选
+                    <input type="checkbox" v-model="xPage.allId" @change="xPage.all()"> 全选
                 </th>
                 <th>员工编号</th>
                 <th>职位</th>
@@ -71,10 +79,10 @@
                 <th>电话</th>
                 <th>操作</th>
             </tr>
-            <tr v-for="li in list">
+            <tr v-for="li in xPage.dataList">
                 <td>
-                    <input type="checkbox" :value="li.id" v-model="ids" v-if="li.id != 1">
-                    <input type="checkbox" :value="li.id" v-model="ids" v-if="li.id == 1" disabled>
+                    <input type="checkbox" :value="li.id" v-model="xPage.ids" v-if="li.id != 1">
+                    <input type="checkbox" :value="li.id" v-model="xPage.ids" v-if="li.id == 1" disabled>
                 </td>
                 <td>{{li.id}}</td>
                 <td>{{li.work}}</td>
@@ -87,7 +95,7 @@
                 <td>{{li.phone}}</td>
                 <td>
                     <div class="btn-group  btn-group-xs" role="group">
-                        <button type="button" class="btn btn-danger" @click="del(li.id)" v-if="li.id != 1">
+                        <button type="button" class="btn btn-danger" @click="xPage.del(li.id)" v-if="li.id != 1">
                             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
                             删除
                         </button>
@@ -107,21 +115,25 @@
                 </td>
             </tr>
         </table>
-        <div class="myNav">
-            <nav aria-label="Page navigation" class="text-right">
+        <div class="myNav navbar-fixed-bottom">
+            <nav aria-label="Page navigation" class="text-center">
                 <ul class="pagination">
-                    <li>
-                        <a @click="upPage()" aria-label="Previous">
+                    <li :class="{disabled: (xPage.pageIndex == 1)}" >
+                        <a @click="xPage.upPage()" aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
-                    <li v-for="page in page.pager">
-                        <a @click="getData(page)">{{page}}</a>
+                    <li v-for="page in xPage.pageList" :class="{disabled: (xPage.pageIndex == page)}" >
+                        <a @click="xPage.getData(page)" >{{page}}</a>
                     </li>
-                    <li>
-                        <a @click="nextPage()" aria-label="Next">
+                    <li :class="{disabled: (xPage.pageIndex == xPage.pageMax)}" >
+                        <a @click="xPage.nextPage()" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
+                    </li>
+                    <li class="pager-label" style="line-height: 34px">
+                         &nbsp;第 <input type="text" v-model="xPage.pageIndex" style="width: 25px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
+                        每页 <input type="number" min="1" max="10" v-model="xPage.pageSize" style="width: 43px; height: 25px;" onchange="xPage.getData(1)"> 条数据 共{{xPage.dataCount}}项
                     </li>
                 </ul>
             </nav>
@@ -302,6 +314,7 @@
 <script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
 <script src="./plug-ins/layer/layer.js"></script>
 <script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/current.js"></script>
 <script src="./js/staff.js"></script>
 </body>
 </html>

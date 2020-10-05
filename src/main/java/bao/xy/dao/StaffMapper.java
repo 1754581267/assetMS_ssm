@@ -20,7 +20,7 @@ public interface StaffMapper {
 
     Integer add(@Param("staff") Staff staff);
 
-    Integer updp(@Param("id") String id, @Param("powers") String powers);
+    Integer updp(@Param("ids") List<Integer> ids, @Param("powers") String powers);
 
     Integer updt(@Param("staff") Staff staff);
 

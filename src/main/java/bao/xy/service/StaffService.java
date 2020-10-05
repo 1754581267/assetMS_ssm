@@ -1,6 +1,7 @@
 package bao.xy.service;
 
 import bao.xy.model.Staff;
+import bao.xy.utils.PageDate;
 import bao.xy.utils.TableData;
 import javafx.scene.control.Tab;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +17,10 @@ public interface StaffService {
     /**
      * 查询
      *
-     * @param index
+     * @param pd
      * @return
      */
-    TableData<Staff> paging(Integer index, String work, String name, String uname);
+    TableData<Staff> paging(PageDate pd);
 
     /**
      * 删除
@@ -40,7 +41,7 @@ public interface StaffService {
      * @param powers 权限
      * @return code
      */
-    String updp(String id, String powers);
+    String updp(List<Integer> id, String powers);
 
     /**
      * * 修改员工信息

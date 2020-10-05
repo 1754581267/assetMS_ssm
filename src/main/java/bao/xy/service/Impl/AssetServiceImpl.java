@@ -4,8 +4,10 @@ import bao.xy.dao.AssetsMapper;
 import bao.xy.model.Asset;
 import bao.xy.service.AssetService;
 import bao.xy.service.JdbcService;
+import bao.xy.utils.PageDate;
 import bao.xy.utils.PageUtils;
 import bao.xy.utils.TableData;
+import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +18,8 @@ import java.util.List;
  * @Description:
  * @CreateTime: 2020-09-05-13-40
  */
-@Service("assetService")
+@Service
 public class AssetServiceImpl implements AssetService {
-
-    @Value("${size}")
-    private int size;
 
     @Resource
     private AssetsMapper mapper;
@@ -33,23 +32,25 @@ public class AssetServiceImpl implements AssetService {
     /**
      * 分页
      *
-     * @param index 页数
-     * @param assetClass 资产类别
-     * @param state 资产状态
+     * @param pd 搜索数据
      * @return data
      */
-    public TableData<Asset> paging(Integer index, String assetClass, String state) {
-        TableData td = new TableData();
-        td.setPageSize(size);
-        td.setPageIndex(index);
+    public TableData<Asset> paging(PageDate pd) {
+        TableData td = new TableData(pd);
+        String assetClass = null;
+        String state = null;
+        JSONObject sd = pd.getScoutData();
+        if (sd != null) {
+            assetClass = sd.getString("assetClass");
+            state = sd.getString("state");
+        }
         Integer count = mapper.listCount(assetClass, state);
         td.setDataCount(count);
-        td.setPageCount(PageUtils.getLastPage(count, size));
-        if (count < 0) {
+        if (count <= 0) {
             return td;
         }
 
-        List<Asset> list = mapper.paging(PageUtils.getRowBounds(index, size), assetClass, state);
+        List<Asset> list = mapper.paging(PageUtils.getRowBounds(pd.getPageIndex(), pd.getPageSize()), assetClass, state);
         td.setDataList(list);
         return td;
     }

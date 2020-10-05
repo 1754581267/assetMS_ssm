@@ -10,10 +10,8 @@ import java.util.Date;
 public class DateUtils {
 
     public static String Date() {
-        Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String dat = sdf.format(date);
-        return dat;
+        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        return date;
     }
 
 

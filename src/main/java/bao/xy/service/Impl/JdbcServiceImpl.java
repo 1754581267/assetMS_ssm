@@ -49,9 +49,7 @@ public class JdbcServiceImpl implements JdbcService {
     @Override
     @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
     public boolean updt(Integer num, String table, String k, String v, String wherek, String wherev) {
-
         Integer updt = mapper.updt(table, k, v, wherek, wherev);
-        System.out.println(updt);
         if (updt >= num) {
             return true;
         } else {

@@ -3,8 +3,10 @@ package bao.xy.service.Impl;
 import bao.xy.dao.StaffMapper;
 import bao.xy.model.Staff;
 import bao.xy.service.StaffService;
+import bao.xy.utils.PageDate;
 import bao.xy.utils.PageUtils;
 import bao.xy.utils.TableData;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.ibatis.session.RowBounds;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,33 +23,37 @@ import java.util.List;
 public class StaffServiceImpl implements StaffService {
 
 
-    @Value("${size}")
-    private int size;
-
     @Resource
     private StaffMapper mapper;
 
     /**
      *
-     * @param index
+     * @param pd
      * @return
      */
     @Override
     @Transactional( rollbackFor = Exception.class)
-    public TableData<Staff> paging(Integer index, String work, String name, String uname) {
+    public TableData<Staff> paging(PageDate pd) {
+        TableData<Staff> td = new TableData(pd);
+        String work = null;
+        String name = null;
+        String uname = null;
+        JSONObject sd = pd.getScoutData();
+        if (sd != null) {
+            work = sd.getString("work");
+            name = sd.getString("name");
+            uname = sd.getString("uname");
+        }
 
-        TableData<Staff> td = new TableData();
-        td.setPageSize(size);
-        td.setPageIndex(index);
         Integer count = mapper.listCount(work, name, uname);
         td.setDataCount(count);
-        td.setPageCount(PageUtils.getLastPage(count, size));
+//        td.setPageCount(PageUtils.getLastPage(count, size));
 
         if (count <= 0) {
             return td;
         }
 
-        List<Staff> list = mapper.paging(PageUtils.getRowBounds(index, size), work, name, uname);
+        List<Staff> list = mapper.paging(PageUtils.getRowBounds(pd.getPageIndex(), pd.getPageSize()), work, name, uname);
         td.setDataList(list);
         return td;
 
@@ -55,22 +61,21 @@ public class StaffServiceImpl implements StaffService {
 
     /**
      * 修改权限
-     *
      * @param id 员工id
      * @param powers 权限
-     * @return code
+     * @return
      */
     @Override
     @Transactional( rollbackFor = Exception.class)
-    public String updp(String id, String powers) {
+    public String updp(List<Integer> id, String powers) {
+//        System.out.println(id);
         String code = "";
         Integer updp = mapper.updp(id, powers);
-
         if (updp > 0) {
             code = "updtSuc";
-            if (id.equals(LoginServiceImpl.id) && powers.equals("已锁定")) {
-                code = "myself";
-            }
+//            if (id.equals(LoginServiceImpl.id) && powers.equals("已锁定")) {
+//                code = "myself";
+//            }
         } else {
             code = "updtErr";
         }
