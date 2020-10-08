@@ -19,15 +19,19 @@
 <body>
 <div id="box">
     <div class="panel panel-default">
-        <div class="panel-heading">财务数据搜索界面</div>
+        <div class="panel-heading">业务搜索界面</div>
         <div class="panel-body">
             <div class="form-inline">
                 <div class="form-group">
-                    <div class="input-group myinput">
-                        <div class="input-group-addon">凭证号:</div>
-                        <input type="text" class="form-control" placeholder="请输入凭证号" v-model="xPage.sd.proof">
+                    <div class="input-group">
+                        <div class="input-group-addon">员工姓名:</div>
+                        <input type="text" class="form-control" placeholder="请输入员工姓名" v-model="xPage.sd.name">
+                        <div class="input-group-addon">申请时间:</div>
+                        <input type="text" class="form-control" placeholder="请输入申请时间" v-model="xPage.sd.appTime">
+                        <div class="input-group-addon">归还时间:</div>
+                        <input type="text" class="form-control" placeholder="请输入归还/报废时间" v-model="xPage.sd.retTime">
                         <div class="input-group-addon">状态:</div>
-                        <input type="text" class="form-control" placeholder="请输入状态" v-model="xPage.sd.state">
+                        <input type="text" class="form-control" placeholder="请输入业务状态" v-model="xPage.sd.state">
                     </div>
                 </div>
                 <button type="button" class="btn btn-primary" @click="xPage.getData(1)">
@@ -36,7 +40,7 @@
                 </button>
             </div>
         </div>
-        <div class="panel-heading">财务数据操作界面</div>
+        <div class="panel-heading">资产操作界面</div>
         <div class="panel-body">
             <button type="button" class="btn btn-success" @click="addMod">
                 <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
@@ -55,30 +59,40 @@
                     <input type="checkbox" v-model="xPage.allId" @change="xPage.all()"> 全选
                 </th>
                 <th>编号</th>
-                <th>员工编号</th>
-                <th>凭证号</th>
-                <th>入账时间</th>
+<!--                <th>员工编号</th>-->
+                <th>员工姓名</th>
+<!--                <th>资产编号</th>-->
+                <th>产品名称</th>
                 <th>状态</th>
+                <th>申请时间</th>
+                <th>归还/报废时间</th>
                 <th>操作</th>
             </tr>
             <tr v-for="li in xPage.dataList">
                 <td>
-                    <input type="checkbox" :value="li.id" v-model="xPage.ids">
+                    <input type="checkbox" :value="li.id" v-model="xPage.ids" v-if="li.id != 1">
                 </td>
                 <td>{{li.id}}</td>
-                <td>{{li.staffId}}</td>
-                <td>{{li.proof}}</td>
-                <td>{{li.entryDate}}</td>
+                <!-- <td>{{li.staffId}}</td> -->
+                <td>{{li.staffName}}</td>
+<!--                <td>{{li.assetsId}}</td>-->
+                <td>{{li.productName}}</td>
                 <td>{{li.state}}</td>
+                <td>{{li.applicationTime}}</td>
+                <td>{{li.returnTime}}</td>
                 <td>
                     <div class="btn-group  btn-group-xs" role="group">
-                        <button type="button" class="btn btn-danger" @click="xPage.del(li.id, 'del')">
+                        <button type="button" class="btn btn-danger" @click="xPage.del(li.id)">
                             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
                             删除
                         </button>
-                        <button type="button" class="btn btn-warning" @click="updt(li)">
+                        <button type="button" class="btn btn-warning" @click="ret(li)" v-show="li.state==='使用中'">
                             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
-                            修改
+                            归还
+                        </button>
+                        <button type="button" class="btn btn-danger" @click="scrap(li)" v-show="li.state==='使用中'">
+                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                            报废
                         </button>
                     </div>
                 </td>
@@ -109,62 +123,20 @@
         </div>
     </div>
     <!-- 添加财务模态框 -->
-    <div class="modal" id="addfina" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+    <div class="modal" id="addapp" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
         <div class="modal-dialog" style="width: 500px;">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                    <h4 class="modal-title">添加财务信息</h4>
+                    <h4 class="modal-title">申请资产信息</h4>
                 </div>
                 <div class="modal-body">
                     <form class="form-horizontal" id="addform" action="/add" @submit.prevent="submit()" method="post" >
                         <div class="form-group">
-                            <label for="proof" class="col-sm-3 control-label">凭证号:</label>
-                            <div class="col-sm-5">
-                                <input type="text" class="form-control" v-model="proof" readonly placeholder="请生成凭证号">
-                                <div id="prof"></div>
-                            </div>
-                            <button type="button" id="proof" class="btn btn-primary col-sm-3" @click="form()" >生成凭证号</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="state" class="col-sm-3 control-label">状态:</label>
+                            <label for="asset" class="col-sm-3 control-label">名称:</label>
                             <div class="col-sm-8">
-                                <select class="form-control" v-model="state" id="state">
-                                    <option value="">未选择</option>
-                                    <option value="可用">可用</option>
-                                    <option value="销账">销账</option>
-                                </select>
-                                <div id="sta"></div>
-                            </div>
-                        </div>
-                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
-                            <button type="submit" class="btn btn-primary">保存</button>
-                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- 更改财务模态框 -->
-    <div class="modal" id="updtfina" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-        <div class="modal-dialog" style="width: 500px;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                    <h4 class="modal-title">更改财务信息</h4>
-                </div>
-                <div class="modal-body">
-                    <form class="form-horizontal" @submit.prevent="submit1()" >
-                        <div class="form-group">
-                            <label for="upstate" class="col-sm-3 control-label">状态:</label>
-                            <div class="col-sm-8">
-                                <select class="form-control" v-model="upstate" id="upstate">
-                                    <option value="">未选择</option>
-                                    <option value="可用">可用</option>
-                                    <option value="销账">销账</option>
-                                </select>
-                                <div id="upsta"></div>
+                                <input type="text" class="form-control" v-model="assetId" id="asset" @blur="findas()" placeholder="请输入资产编号">
+                                <div id="ass"></div>
                             </div>
                         </div>
                         <div class="modal-footer text-center" style="margin: auto; width: 150px;">
@@ -177,11 +149,11 @@
         </div>
     </div>
 </div>
-<script src="./plug-ins/jq/jquery.min.js"></script>
-<script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
-<script src="./plug-ins/layer/layer.js"></script>
+<script src="./plug-ins/jq/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="plug-ins/layer/layer.js"></script>
 <script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
 <script src="js/current.js"></script>
-<script src="./js/finance.js"></script>
+<script src="./js/application.js" type="text/javascript" charset="utf-8"></script>
 </body>
 </html>

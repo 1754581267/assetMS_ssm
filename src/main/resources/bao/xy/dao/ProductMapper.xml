@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.dao.ProductMapper">
+
+    <insert id="add" keyProperty="product.id" useGeneratedKeys="true">
+        INSERT INTO product (name, specification, unit, number, unit_price, srorage_time)
+        VALUES (#{product.name}, #{product.specification}, #{product.unit}, #{product.number}, #{product.unitPrice}, #{product.srorageTime})
+    </insert>
+
+    <update id="updt">
+        UPDATE product
+        SET name=#{product.name}, specification=#{product.specification}, unit=#{product.unit}, number=#{product.number}, unit_price=#{product.unitPrice}
+        where (id = #{product.id})
+    </update>
+
+    <select id="paging" resultMap="productMap">
+        select * from product t1 <include refid="whereSql"></include>
+    </select>
+
+    <select id="listCount" resultType="java.lang.Integer">
+        select count(*) from product t1 <include refid="whereSql"></include>
+    </select>
+
+    <sql id="whereSql">
+        <where>
+            <if test="name != null and name != ''">
+                AND t1.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="specification != null and specification != ''">
+                AND t1.specification LIKE CONCAT('%', #{specification}, '%')
+            </if>
+            <if test="srorageTime != null and srorageTime != ''">
+                AND t1.srorage_time LIKE CONCAT('%', #{srorageTime}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <resultMap id="productMap" type="bao.xy.model.Product">
+        <result column="unit_price" property="unitPrice"></result>
+        <result column="srorage_time" property="srorageTime"></result>
+    </resultMap>
+</mapper>

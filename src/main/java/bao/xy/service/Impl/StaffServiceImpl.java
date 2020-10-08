@@ -2,6 +2,7 @@ package bao.xy.service.Impl;
 
 import bao.xy.dao.StaffMapper;
 import bao.xy.model.Staff;
+import bao.xy.service.JdbcService;
 import bao.xy.service.StaffService;
 import bao.xy.utils.PageDate;
 import bao.xy.utils.PageUtils;
@@ -47,8 +48,6 @@ public class StaffServiceImpl implements StaffService {
 
         Integer count = mapper.listCount(work, name, uname);
         td.setDataCount(count);
-//        td.setPageCount(PageUtils.getLastPage(count, size));
-
         if (count <= 0) {
             return td;
         }
@@ -56,26 +55,26 @@ public class StaffServiceImpl implements StaffService {
         List<Staff> list = mapper.paging(PageUtils.getRowBounds(pd.getPageIndex(), pd.getPageSize()), work, name, uname);
         td.setDataList(list);
         return td;
-
     }
 
     /**
      * 修改权限
      * @param id 员工id
      * @param powers 权限
-     * @return
+     * @return string
      */
     @Override
     @Transactional( rollbackFor = Exception.class)
     public String updp(List<Integer> id, String powers) {
-//        System.out.println(id);
         String code = "";
         Integer updp = mapper.updp(id, powers);
         if (updp > 0) {
             code = "updtSuc";
-//            if (id.equals(LoginServiceImpl.id) && powers.equals("已锁定")) {
-//                code = "myself";
-//            }
+                for (Integer i : id) {
+                    if (i.equals(LoginServiceImpl.id) && powers.equals("已锁定")) {
+                    code = "myself";
+                }
+            }
         } else {
             code = "updtErr";
         }
@@ -85,11 +84,10 @@ public class StaffServiceImpl implements StaffService {
     /**
      * * 修改员工信息
      * @param staff 员工信息
-     * @return
+     * @return string
      */
-
-//    @Override
-    @Transactional( rollbackFor = Exception.class)
+    @Override
+    @Transactional( rollbackFor = Exception.class )
     public String updt(Staff staff) {
         String code = "";
         Integer updp = mapper.updt(staff);
@@ -104,6 +102,11 @@ public class StaffServiceImpl implements StaffService {
         return code;
     }
 
+    /**
+     * 添加员工信息
+     * @param staff 员工信息
+     * @return string
+     */
     @Override
     @Transactional( rollbackFor = Exception.class)
     public String add(Staff staff) {
@@ -114,18 +117,4 @@ public class StaffServiceImpl implements StaffService {
             return "addErr";
         }
     }
-
-
-
-    @Override
-    @Transactional( rollbackFor = Exception.class)
-    public String del(List<Integer> id) {
-        Integer del = mapper.del(id);
-        if (del > 0) {
-            return  "delSuc";
-        } else {
-            return  "delErr";
-        }
-    }
-
 }

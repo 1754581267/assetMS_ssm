@@ -5,7 +5,7 @@ package bao.xy.model;
  * @CreateTime: 2020-09-01-20-26
  */
 public class Details {
-    private String assetsID;
+    private String assetsId;
     private String entryDate;
     private String proof;
     private String financeId;
@@ -23,8 +23,8 @@ public class Details {
     public Details() {
     }
 
-    public Details(String assetsID, String entryDate, String proof, String financeId, String productId, String assetClass, String productName, String specification, String srorageTime, String unit, String number, String unitPrice, String staffName, String assetsState) {
-        this.assetsID = assetsID;
+    public Details(String assetsId, String entryDate, String proof, String financeId, String productId, String assetClass, String productName, String specification, String srorageTime, String unit, String number, String unitPrice, String staffName, String assetsState) {
+        this.assetsId = assetsId;
         this.entryDate = entryDate;
         this.proof = proof;
         this.financeId = financeId;
@@ -40,12 +40,12 @@ public class Details {
         this.assetsState = assetsState;
     }
 
-    public String getAssetsID() {
-        return assetsID;
+    public String getAssetsId() {
+        return assetsId;
     }
 
-    public void setAssetsID(String assetsID) {
-        this.assetsID = assetsID;
+    public void setAssetsId(String assetsId) {
+        this.assetsId = assetsId;
     }
 
     public String getEntryDate() {
@@ -155,7 +155,7 @@ public class Details {
     @Override
     public String toString() {
         return "Details{" +
-                "assetsID='" + assetsID + '\'' +
+                "assetsId='" + assetsId + '\'' +
                 ", entryDate='" + entryDate + '\'' +
                 ", proof='" + proof + '\'' +
                 ", financeId='" + financeId + '\'' +

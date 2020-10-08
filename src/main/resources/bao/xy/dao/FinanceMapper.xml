@@ -14,7 +14,7 @@
     </select>
 
     <select id="listCount" resultType="java.lang.Integer">
-        select count(*) from finance <include refid="whereSql"></include>
+        select count(*) from finance t1 <include refid="whereSql"></include>
     </select>
 
     <resultMap id="financeMap" type="bao.xy.model.Finance">

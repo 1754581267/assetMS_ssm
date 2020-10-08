@@ -90,7 +90,7 @@ var app = new Vue({
 						}
 					},
 					error : function () {
-						alert("验证失败，请联系管理员");
+						layer.alert("验证失败，请联系管理员");
 					}
 				});
 			}
@@ -105,7 +105,7 @@ var app = new Vue({
 				    }
 				);
 			} else {
-				alert("不是保管员无法操作！");
+				layer.alert("不是保管员无法操作！");
 			}
 		},
 		submit : function () {
@@ -124,7 +124,7 @@ var app = new Vue({
 				this.a5 = 1;
 			}
 			if(this.a1 + this.a3 + this.a4 + this.a5 != 4) {
-				alert("请正确完成流程");
+				layer.alert("请正确完成流程");
 			} else {
 				$("#addasset").modal('hide');
 				$.ajax({
@@ -141,14 +141,14 @@ var app = new Vue({
 				    success : function (code) {
                         console.log(code.code);
 				        if (code.code == "addSuc") {
-				            alert("添加成功");
+				            layer.alert("添加成功");
 							xPage.getData(xPage.pageIndex);
 				        } else if(code.code == "addErr") {
-				            alert("添加失败");
+							layer.alert("添加失败");
 				        }
 				    },
 				    error : function () {
-				        alert("添加失败，请联系管理员");
+						layer.alert("添加失败，请联系管理员");
 				    }
 				});
 			}
@@ -169,10 +169,10 @@ var app = new Vue({
 				app.findpid();
 				app.findfid();
 			} else {
-				alert("不是保管员无法操作！");
+				layer.alert("不是保管员无法操作！");
 			}
 		},
-		submit1 : function (str) {
+		submit1 : function () {
 			if (this.upassetClass == '') {
 				$("#inputupaclass").html("<strong style=\"color: red\">请选择资产类型</strong>");
 			    this.u1 = 0;
@@ -188,14 +188,14 @@ var app = new Vue({
 				this.u5 = 1;
 			}
 			if(this.u1 + this.a3 + this.a4 + this.u5 != 4) {
-				alert("请正确完成流程"+this.u1 + this.a3 + this.a4 + this.u5);
+				layer.alert("请正确完成流程"+this.u1 + this.a3 + this.a4 + this.u5);
 			} else {
 				$("#updtasset").modal('hide');
 				$.ajax({
 					url : "/assets.ajax",
 					type : "POST",
 					data : {
-						str: str,
+						str: 'updt',
 						id : this.upid,
 						assetClass : this.upassetClass,
 						financeId : this.financialId,
@@ -206,14 +206,14 @@ var app = new Vue({
 					success : function (code) {
 						console.log(code.code);
 						if (code.code == "updtSuc") {
-							alert("修改成功");
+							layer.alert("修改成功");
 							xPage.getData(xPage.pageIndex);
 						} else if(code.code == "updtErr") {
-							alert("修改失败");
+							layer.alert("修改失败");
 						}
 					},
 					error : function () {
-						alert("修改失败，请联系管理员");
+						layer.alert("修改失败，请联系管理员");
 					}
 				});
 			}

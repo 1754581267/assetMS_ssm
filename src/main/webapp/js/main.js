@@ -5,7 +5,7 @@ var app = new Vue({
 		name : '',
 		staff : '管理员',
 		asset : '保管员',
-		mysrc : 'staff.html',
+		mysrc : 'detail.html',
 	},
 	methods:{
 		myif : function(url) {

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.dao.ApplicationMapper">
+
+    <insert id="add" keyProperty="app.id" useGeneratedKeys="true">
+        INSERT INTO application (staff_id, assets_id, state, application_time)
+        VALUES (#{app.staffId}, #{app.assetsId}, #{app.state}, #{app.applicationTime})
+    </insert>
+
+    <update id="updt">
+        update assets
+        set asset_class=#{asset.assetClass}, finance_id=#{asset.financeId}, product_id=#{asset.productId}, care_staff_id=#{asset.careStaffId}, state=#{asset.state}
+        where ( id = #{asset.id} )
+    </update>
+
+    <select id="paging" resultMap="appMap">
+        SELECT *, p1.name pname FROM application a1
+        inner join staff s1 on a1.staff_id=s1.id
+        inner join assets a2 on a2.id=a1.assets_id
+        inner join product p1 on p1.id=a2.product_id
+        <include refid="whereSql"></include>
+        order by a1.id desc
+    </select>
+
+    <select id="listCount" resultType="java.lang.Integer">
+        SELECT count(*) FROM application a1
+        inner join staff s1 on a1.staff_id=s1.id
+        inner join assets a2 on a2.id=a1.assets_id
+        inner join product p1 on p1.id=a2.product_id
+        <include refid="whereSql"></include>
+        order by a1.id desc
+    </select>
+
+    <resultMap id="appMap" type="bao.xy.model.Application">
+        <result column="staff_id" property="staffId"></result>
+        <result column="name" property="staffName"></result>
+        <result column="pname" property="productName"></result>
+        <result column="assets_id" property="assetsId"></result>
+        <result column="application_time" property="applicationTime"></result>
+        <result column="return_time" property="returnTime"></result>
+    </resultMap>
+
+    <sql id="whereSql">
+        <where>
+            <if test="name != null and name != ''">
+                AND s1.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="appTime != null and appTime != ''">
+                AND a1.application_time LIKE CONCAT('%', #{appTime}, '%')
+            </if>
+            <if test="retTime != null and retTime != ''">
+                AND a1.return_time LIKE CONCAT('%', #{retTime}, '%')
+            </if>
+            <if test="state != null and state != ''">
+                AND a1.state LIKE CONCAT('%', #{state}, '%')
+            </if>
+        </where>
+    </sql>
+
+
+</mapper>

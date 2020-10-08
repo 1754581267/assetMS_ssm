@@ -20,7 +20,7 @@
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav navbar-right">
                         <li class="dropdown">
-                            <a href="#" style="padding: 5px 15px 0 0" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <a href="#" style="padding: 15px 0px 0 0" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                                 欢迎您，{{name}}
                                 <span class="caret"></span>
                             </a>
@@ -55,10 +55,10 @@
                     <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
                         <div class="panel-body">
                             <ul class="ul">
-                                <li v-if="work === asset " ><a @click="myif('details.html')" role="button">查看资产详情</a></li>
+                                <li><a @click="myif('detail.html')" role="button">查看资产详情</a></li>
                                 <li v-if="work === asset " ><a @click="myif('finance.html')" role="button">查看财务表</a></li>
                                 <li v-if="work === asset " ><a @click="myif('product.html')" role="button">查看产品表</a></li>
-                                <li><a @click="myif('assets.html')" role="button">查看资产表</a></li>
+                                <li v-if="work === asset " ><a @click="myif('assets.html')" role="button">查看资产表</a></li>
                             </ul>
                         </div>
                     </div>

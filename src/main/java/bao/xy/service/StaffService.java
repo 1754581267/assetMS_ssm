@@ -22,15 +22,6 @@ public interface StaffService {
      */
     TableData<Staff> paging(PageDate pd);
 
-    /**
-     * 删除
-     *
-     * @param id 员工id
-     * @return
-     */
-    String del(List<Integer> id);
-
-
     String add(Staff staff);
 
 

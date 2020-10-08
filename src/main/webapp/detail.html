@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>资产详情列表</title>
+
+    <link href="./plug-ins/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/current.css" rel="stylesheet">
+    <style>
+        .lh>tbody>tr>td {
+            line-height: 33px;
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+    </style>
+</head>
+<body>
+<div id="box">
+    <div class="panel panel-default">
+        <div class="panel-heading">资产详情搜索界面</div>
+        <div class="panel-body">
+            <div class="form-inline">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-addon">资产类别:</div>
+                        <input type="text" class="form-control" placeholder="请输入资产类别" v-model="xPage.sd.assetClass">
+                        <div class="input-group-addon">凭证号:</div>
+                        <input type="text" class="form-control" placeholder="请输入凭证号" v-model="xPage.sd.proof">
+                        <div class="input-group-addon">产品名称:</div>
+                        <input type="text" class="form-control" placeholder="请输入产品名称" v-model="xPage.sd.productName">
+                        <div class="input-group-addon">状态:</div>
+                        <input type="text" class="form-control" placeholder="请输入资产状态" v-model="xPage.sd.assetsState">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" @click="xPage.getData(1)">
+                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                    搜索
+                </button>
+            </div>
+        </div>
+        <div class="panel-heading">资产详情操作界面</div>
+        <div class="panel-body">
+            <div class="form-inline">
+                <div class="form-group">
+                    <button type="button" class="btn btn-success" @click="addMod()">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                        添加
+                    </button>
+                    <button type="button" class="btn btn-danger" @click="delmore()">
+                        <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                        删除
+                    </button>
+                </div><br>
+            </div>
+        </div>
+    </div>
+    <div id="show">
+        <table class="table table-hover table-bordered lh" >
+            <tr>
+                <th>
+                    <input type="checkbox" v-model="allId" @change="all()"> 全选
+                </th>
+                <th>资产编号</th>
+                <!-- <th>财务编码</th> -->
+                <!-- <th>产品序列号</th> -->
+                <th>类别</th>
+                <th>名称</th>
+                <th>数量</th>
+                <th>单位</th>
+                <th>单价</th>
+                <th>规格型号</th>
+                <th>凭证号</th>
+                <th>财务入账日期</th>
+                <th>入库时间</th>
+                <th>保管人</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            <tr v-for="li in xPage.dataList">
+                <td>
+                    <input type="checkbox" ref="chk" :value="li" v-model="lis" @click="mycheck(li)">
+                </td>
+                <td>{{li.assetsId}}</td>
+                <!-- <td>{{li.financeId}}</td> -->
+                <!-- <td>{{li.productId}}</td> -->
+                <td>{{li.assetClass}}</td>
+                <td>{{li.productName}}</td>
+                <td>{{li.number}}</td>
+                <td>{{li.unit}}</td>
+                <td>{{li.unitPrice}}</td>
+                <td>{{li.specification}}</td>
+                <td>{{li.proof}}</td>
+                <td>{{li.entryDate}}</td>
+                <td>{{li.srorageTime}}</td>
+                <td>{{li.staffName}}</td>
+                <td>{{li.assetsState}}</td>
+                <td>
+                    <div class="btn-group  btn-group-xs" role="group">
+                        <button type="button" class="btn btn-danger" @click="del(li.assetsId, li.financeId, li.productId)">
+                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                            删除
+                        </button>
+                        <button type="button" class="btn btn-warning" @click="updt(li)">
+                            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                            修改
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div class="myNav navbar-fixed-bottom">
+            <nav aria-label="Page navigation" class="text-center">
+                <ul class="pagination">
+                    <li :class="{disabled: (xPage.pageIndex == 1)}" >
+                        <a @click="xPage.upPage()" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li v-for="page in xPage.pageList" :class="{disabled: (xPage.pageIndex == page)}" >
+                        <a @click="xPage.getData(page)" >{{page}}</a>
+                    </li>
+                    <li :class="{disabled: (xPage.pageIndex == xPage.pageMax)}" >
+                        <a @click="xPage.nextPage()" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="pager-label" style="line-height: 34px">
+                        &nbsp;第 <input type="number" min="1" :max="xPage.pageMax" v-model="xPage.pageIndex" style="width: 43px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
+                        每页 <input type="number" min="1" max="10" v-model="xPage.pageSize" style="width: 43px; height: 25px;" onchange="xPage.getData(1)"> 条数据 共{{xPage.dataCount}}项
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <!-- 新增模态框 -->
+    <div class="modal" id="adddet" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">新增资产信息</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="addform" class="form-horizontal" @submit.prevent="submit()" >
+                        <div class="form-group">
+                            <label for="aclass" class="col-sm-3 control-label">类别:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="assetClass" id="aclass">
+                                    <option value="">未选择</option>
+                                    <option :value="aclass" v-for="aclass in allclass">{{aclass}}</option>
+                                </select>
+                                <div id="inputaclass"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="name" class="col-sm-3 control-label">名称:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="productName" id="name" placeholder="请输入资产名称">
+                                <div id="inputname"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="number" class="col-sm-3 control-label">数量:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="number" id="number" placeholder="请输入产品数量">
+                                <div id="inputnumber"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unit" class="col-sm-3 control-label">单位:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="unit" id="unit" placeholder="请输入产品单位">
+                                <div id="inputunit"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unitPrice" class="col-sm-3 control-label">单价:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="unitPrice" id="unitPrice" placeholder="请输入产品单价">
+                                <div id="inputunitPrice"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="spft" class="col-sm-3 control-label">规格:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="spft" id="spft" placeholder="请输入产品规格">
+                                <div id="inputspft"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="proof" class="col-sm-3 control-label">凭证号:</label>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" v-model="proof" readonly placeholder="请生成凭证号">
+                                <div id="prof"></div>
+                            </div>
+                            <button type="button" id="proof" class="btn btn-primary col-sm-3" @click="form()" >生成凭证号</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="astate" class="col-sm-3 control-label">状态:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="states" id="astate">
+                                    <option value="">未选择</option>
+                                    <option :value="state" v-for="state in allstate">{{state}}</option>
+                                </select>
+                                <div id="inputastate"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
+                            <button type="submit" class="btn btn-primary">保存</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 更改模态框 -->
+    <div class="modal" id="updtdet" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">更改资产信息</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="updtform" class="form-horizontal" @submit.prevent="submit1()" >
+                        <div class="form-group">
+                            <label for="aclass" class="col-sm-3 control-label">类别:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="upassetClass" id="upaclass">
+                                    <option value="">未选择</option>
+                                    <option :value="aclass" v-for="aclass in allclass">{{aclass}}</option>
+                                </select>
+                                <div id="upinputaclass"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="name" class="col-sm-3 control-label">名称:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="upproductName" id="upname" placeholder="请输入资产名称">
+                                <div id="upinputname"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="number" class="col-sm-3 control-label">数量:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="upnumber" id="upnumber" placeholder="请输入产品数量">
+                                <div id="upinputnumber"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unit" class="col-sm-3 control-label">单位:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="upunit" id="upunit" placeholder="请输入产品单位">
+                                <div id="upinputunit"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unitPrice" class="col-sm-3 control-label">单价:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="upunitPrice" id="upunitPrice" placeholder="请输入产品单价">
+                                <div id="upinputunitPrice"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="spft" class="col-sm-3 control-label">规格:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" v-model="upspft" id="upspft" placeholder="请输入产品规格">
+                                <div id="upinputspft"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="astate" class="col-sm-3 control-label">状态:</label>
+                            <div class="col-sm-8">
+                                <select class="form-control" v-model="upstates" id="upastate">
+                                    <option value="">未选择</option>
+                                    <option :value="state" v-for="state in allstate">{{state}}</option>
+                                </select>
+                                <div id="upinputastate"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer text-center" style="margin: auto; width: 150px;">
+                            <button type="submit" class="btn btn-primary">保存</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="./plug-ins/jq/jquery.min.js"></script>
+<script src="./plug-ins/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+<script src="plug-ins/layer/layer.js"></script>
+<script src="./plug-ins/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/current.js"></script>
+<script src="./js/details.js"></script>
+</body>
+</html>

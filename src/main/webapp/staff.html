@@ -14,6 +14,7 @@
             padding-top: 0px;
             padding-bottom: 0px;
         }
+
     </style>
 </head>
 <body>
@@ -24,11 +25,11 @@
             <div class="form-inline">
                 <div class="form-group">
                     <div class="input-group">
-                        <div class="input-group-addon">职位</div>
+                        <div class="input-group-addon">职位:</div>
                         <input type="text" class="form-control" placeholder="请输入职位" v-model="xPage.sd.work">
-                        <div class="input-group-addon">姓名</div>
+                        <div class="input-group-addon">姓名:</div>
                         <input type="text" class="form-control" placeholder="请输入姓名" v-model="xPage.sd.name">
-                        <div class="input-group-addon">用户名</div>
+                        <div class="input-group-addon">用户名:</div>
                         <input type="text" class="form-control" placeholder="请输入用户名" v-model="xPage.sd.uname">
                     </div>
                 </div>
@@ -132,7 +133,7 @@
                         </a>
                     </li>
                     <li class="pager-label" style="line-height: 34px">
-                         &nbsp;第 <input type="text" v-model="xPage.pageIndex" style="width: 25px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
+                         &nbsp;第 <input type="number" min="1" :max="xPage.pageMax" v-model="xPage.pageIndex" style="width: 43px; height: 25px;" onchange="xPage.getData(xPage.pageIndex)"> / {{xPage.pageMax}} 页
                         每页 <input type="number" min="1" max="10" v-model="xPage.pageSize" style="width: 43px; height: 25px;" onchange="xPage.getData(1)"> 条数据 共{{xPage.dataCount}}项
                     </li>
                 </ul>

@@ -10,6 +10,7 @@ import bao.xy.utils.TableData;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -35,6 +36,8 @@ public class AssetServiceImpl implements AssetService {
      * @param pd 搜索数据
      * @return data
      */
+    @Override
+    @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
     public TableData<Asset> paging(PageDate pd) {
         TableData td = new TableData(pd);
         String assetClass = null;
@@ -116,6 +119,8 @@ public class AssetServiceImpl implements AssetService {
      * @param asset
      * @return
      */
+    @Override
+    @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
     public String add(Asset asset) {
         Integer add = mapper.add(asset);
         if (add > 0) {
@@ -131,8 +136,9 @@ public class AssetServiceImpl implements AssetService {
      * @param asset
      * @return
      */
+    @Override
+    @Transactional( rollbackFor = Exception.class) // 出现异常指令回滚(rollback) 不带注解直接提交(commit)
     public String updt(Asset asset) {
-        System.out.println(asset.toString());
         Integer updt = mapper.updt(asset);
         if (updt > 0) {
             return "updtSuc";

@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="p4_0918_ssm:war2">
+    <output-path>$PROJECT_DIR$/out/artifacts/p4_0918_ssm_war2</output-path>
+    <root id="archive" name="p4_0918_ssm_war.war">
+      <element id="artifact" artifact-name="p4_0918_ssm:war exploded" />
+    </root>
+  </artifact>
+</component>

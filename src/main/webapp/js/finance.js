@@ -126,10 +126,10 @@ var app = new Vue({
 				    dataType : "JSON",
 				    success : function (code) {
 			            console.log(code.code);
-				        if (code.code == "uptSuc") {
+				        if (code.code == "updtSuc") {
 				            layer.alert("修改成功");
 							xPage.getData(xPage.pageIndex);
-				        } else if(code.code == "uptErr") {
+				        } else if(code.code == "updtErr") {
 							layer.alert("修改失败");
 				        }
 				    },

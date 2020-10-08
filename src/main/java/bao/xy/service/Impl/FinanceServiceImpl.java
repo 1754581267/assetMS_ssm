@@ -81,9 +81,9 @@ public class FinanceServiceImpl implements FinanceService {
         boolean updt = jdbcService.updt(1, "finance", "state", finance.getState(), "id", finance.getId());
         if (updt) {
             // 成功
-            return "uptSuc";
+            return "updtSuc";
         }
         // 失败
-        return "uptErr";
+        return "updtErr";
     }
 }

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bao.xy.dao.DetailMapper">
+
+    <insert id="add" keyProperty="finance.id" useGeneratedKeys="true">
+        INSERT INTO finance (staff_id, proof, entry_date, state)
+        VALUES (#{finance.staffId}, #{finance.proof}, #{finance.entryDate}, #{finance.state})
+    </insert>
+
+    <select id="paging" resultMap="detailMap">
+        select a1.id aid, a1.asset_class, a1.state astate, f1.id fid, proof, entry_date, p1.id pid, p1.name pname, p1.*, s1.name sname
+        from assets a1
+        inner join finance f1 on a1.finance_id=f1.id
+        inner join product p1 on a1.product_id=p1.id
+        inner join staff s1 on a1.care_staff_id=s1.id
+        <include refid="whereSql"></include>
+        order by a1.id
+    </select>
+
+    <select id="listCount" resultType="java.lang.Integer">
+        select count(*)
+        from assets a1
+        inner join finance f1 on a1.finance_id=f1.id
+        inner join product p1 on a1.product_id=p1.id
+        inner join staff s1 on a1.care_staff_id=s1.id
+        <include refid="whereSql"></include>
+        order by a1.id
+    </select>
+
+    <resultMap id="detailMap" type="bao.xy.model.Details">
+        <result column="aid" property="assetsId"></result>
+        <result column="asset_class" property="assetClass"></result>
+        <result column="astate" property="assetsState"></result>
+        <result column="fid" property="financeId"></result>
+        <result column="entry_date" property="entryDate"></result>
+        <result column="pid" property="productId"></result>
+        <result column="pname" property="productName"></result>
+        <result column="unit_price" property="unitPrice"></result>
+        <result column="srorage_time" property="srorageTime"></result>
+        <result column="sname" property="staffName"></result>
+    </resultMap>
+
+    <sql id="whereSql">
+        <where>
+            <if test="assetClass != null and assetClass != ''">
+                AND asset_class LIKE CONCAT('%', #{assetClass}, '%')
+            </if>
+            <if test="assetsState != null and assetsState != ''">
+                AND a1.state LIKE CONCAT('%', #{assetsState}, '%')
+            </if>
+            <if test="proof != null and proof != ''">
+                AND proof LIKE CONCAT('%', #{proof}, '%')
+            </if>
+            <if test="productName != null and productName != ''">
+                AND p1.name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+        </where>
+    </sql>
+
+
+</mapper>

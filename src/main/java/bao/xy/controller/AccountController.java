@@ -37,7 +37,7 @@ public class AccountController {
     @ResponseBody
     public String login(String uname, String password, HttpServletRequest request) {
         // 1.接收参数
-        System.out.println(uname + "->" + password);
+//        System.out.println(uname + "->" + password);
         // 状态码
         int code = 0;
         // 2. 校验参数
@@ -127,7 +127,7 @@ public class AccountController {
         }
 
         List<Integer> idList = new ArrayList<>();
-        if (staff.getId() != null && staff.getId().length() > 2) {
+        if (StringUtil.isNotEmpty(staff.getId())) {
             idList = jdbcService.idList(staff.getId());
         }
 
@@ -137,7 +137,6 @@ public class AccountController {
         }
 
         if ("empower".equals(str)) {
-
             code = staffService.updp(idList, "已解锁");
         }
 
@@ -204,7 +203,6 @@ public class AccountController {
         // 更新
         if ("updt".equals(str)) {
             asset.setCareStaffId(LoginServiceImpl.id);
-            System.out.println(asset.toString());
             code = assetService.updt(asset);
         }
 
@@ -214,6 +212,7 @@ public class AccountController {
 
     @Resource
     private FinanceService financeService;
+
     @RequestMapping("/finance.ajax")
     @ResponseBody
     public String finance (PageDate pd, String str, Finance finance) {
@@ -232,10 +231,10 @@ public class AccountController {
             code = jdbcService.delIds("finance", idList);
         }
 
-        Date date = new Date();
 
         // 生成凭证号
         if ("form".equals(str)) {
+            Date date = new Date();
             SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMddHHmmss");
             code = sdf.format(date);
         }
@@ -250,6 +249,171 @@ public class AccountController {
         // 修改
         if ("updt".equals(str)) {
             code = financeService.updt(finance);
+        }
+
+        td.setCode(code);
+        return WebUtil.returnJsonTd(td);
+    }
+
+    @Resource
+    private ProductService productService;
+
+    // 产品
+    @RequestMapping("/product.ajax")
+    @ResponseBody
+    public String product(String str, PageDate pd, Product product) {
+        TableData<Product> td = new TableData<>(pd);
+        String code = "";
+
+        if ("paging".equals(str)) {
+            td = productService.paging(pd);
+            code = jdbcService.isOrNot("保管员", "kep");
+        }
+
+        if ("del".equals(str)) {
+            List<Integer> idList = jdbcService.idList(product.getId());
+            code = jdbcService.delIds("product", idList);
+        }
+
+        if ("form".equals(str)) {
+            Date date = new Date();
+            SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMddHHmmss");
+            code = sdf.format(date);
+        }
+
+        if ("add".equals(str)) {
+            product.setSrorageTime(DateUtils.Date());
+            code = productService.add(product);
+        }
+
+        if ("updt".equals(str)) {
+            code = productService.updt(product);
+        }
+
+        td.setCode(code);
+        return WebUtil.returnJsonTd(td);
+    }
+
+    @Resource
+    private DetailsService detailsService;
+
+    // 资产详情
+    @RequestMapping("/details.ajax")
+    @ResponseBody
+    public String details(String str, PageDate pd, Details details) {
+        TableData<Details> td = new TableData<>(pd);
+        String code = null;
+
+        String acode = null;
+        String fcode = null;
+        String pcode = null;
+
+        if ("paging".equals(str)) {
+            td = detailsService.paging(pd);
+            code = jdbcService.isOrNot("保管员", "kep");
+        }
+
+        if ("add".equals(str)) {
+
+            Product product = new Product(null, details.getProductName(), details.getSpecification(), details.getUnit(), details.getNumber(), details.getUnitPrice(), DateUtils.Date());
+            product.setSrorageTime(DateUtils.Date());
+            pcode = productService.add(product);
+
+
+            String state = "可用";
+            if ("报废".equals(details.getAssetsState())) {
+                state = "销账";
+            }
+            Finance finance = new Finance(null, LoginServiceImpl.id, details.getProof(), DateUtils.Date(), state);
+            finance.setStaffId(LoginServiceImpl.id);
+            finance.setEntryDate(DateUtils.Date());
+            fcode = financeService.add(finance);
+
+            Asset asset = new Asset(null, details.getAssetClass(), finance.getId(), product.getId(), LoginServiceImpl.id, details.getAssetsState());
+            acode = assetService.add(asset);
+            JSONObject json = new JSONObject();
+            json.put("acode", acode);
+            json.put("fcode", fcode);
+            json.put("pcode", pcode);
+            return json.toJSONString();
+        }
+
+        if ("updt".equals(str)) {
+            Product product = new Product(details.getProductId(), details.getProductName(), details.getSpecification(), details.getUnit(), details.getNumber(), details.getUnitPrice(), null);
+            pcode = productService.updt(product);
+            Asset asset = new Asset(details.getAssetsId(), details.getAssetClass(), details.getFinanceId(), details.getProductId(), LoginServiceImpl.id, details.getAssetsState());
+            acode = assetService.updt(asset);
+            String state = "可用";
+            if ("报废".equals(details.getAssetsState())) {
+                state = "销账";
+            }
+            Finance finance = new Finance(details.getFinanceId(), null, null, null, state);
+            fcode = financeService.updt(finance);
+            JSONObject json = new JSONObject();
+            json.put("acode", acode);
+            json.put("fcode", fcode);
+            json.put("pcode", pcode);
+            return json.toJSONString();
+        }
+
+        if ("del".equals(str)) {
+            List<Integer> aidList = jdbcService.idList(details.getAssetsId());
+            List<Integer> fidList = jdbcService.idList(details.getFinanceId());
+            List<Integer> pidList = jdbcService.idList(details.getProductId());
+            System.out.println(aidList+"-"+fidList+"-"+pidList);
+            acode = jdbcService.delIds("assets", aidList);
+            fcode = jdbcService.delIds("finance", fidList);
+            pcode = jdbcService.delIds("product", pidList);
+            JSONObject json = new JSONObject();
+            json.put("acode", acode);
+            json.put("fcode", fcode);
+            json.put("pcode", pcode);
+            return json.toJSONString();
+        }
+
+        td.setCode(code);
+        return WebUtil.returnJsonTd(td);
+    }
+
+    @Resource
+    private ApplicationService applicationService;
+    // 申请业务
+    @RequestMapping("/app.ajax")
+    @ResponseBody
+    public String application(String str, PageDate pd, Application application) {
+
+        TableData<Application> td = new TableData<>(pd);
+        String code = null;
+
+        if ("paging".equals(str)) {
+            td = applicationService.paging(pd);
+            code = jdbcService.isOrNot("保管员", "kep");
+        }
+
+        // 删除业务
+        if ("del".equals(str)) {
+            List<Integer> idList = jdbcService.idList(application.getId());
+            code = jdbcService.delIds("application", idList);
+        }
+
+        // 查询资产状态
+        if ("finda".equals(str)) {
+            code = applicationService.finda(application.getAssetsId());
+        }
+
+        // 新增业务
+        if ("add".equals(str)) {
+            code = applicationService.add(application);
+        }
+
+        // 归还业务
+        if ("ret".equals(str)) {
+            code = applicationService.ret(application);
+        }
+
+        // 报废业务
+        if ("scrap".equals(str)) {
+            code = applicationService.scrap(application);
         }
 
         td.setCode(code);

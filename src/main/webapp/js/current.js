@@ -100,7 +100,6 @@ var xPage = {
             this.ids = [];
         }
     },
-
     delmore: function () {
         if (xPage.ids.length <= 0 ) {
             layer.alert("请选择要删除的数据");
@@ -127,6 +126,7 @@ var xPage = {
                         if (code.code == "delSuc") {
                             layer.alert("删除成功");
                             xPage.ids = [];
+                            xPage.allId = false;
                             xPage.getData(xPage.pageIndex);
                         } else if (code.code == "delErr") {
                             layer.alert("删除失败");
@@ -142,5 +142,5 @@ var xPage = {
         } else {
             layer.alert("无法操作");
         }
-    },
+    }
 }
